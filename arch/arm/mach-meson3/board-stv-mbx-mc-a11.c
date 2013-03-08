@@ -841,24 +841,11 @@ static struct mtd_partition multi_partition_info[] = { // 4G
 		.offset = (8+4+8+512)*1024*1024,
 		.size   = 300*1024*1024,
 	},
-#ifdef CONFIG_AML_NFTL
-	{//1G for NFTL_part
-		.name   = "NFTL_Part",
-		.offset = (8+4+8+512+300)*1024*1024,
-		.size   = 1024*1024*1024,
-	},
-	{//other 2040M for user data
-		.name = "userdata",
-		.offset = MTDPART_OFS_APPEND,
-		.size = MTDPART_SIZ_FULL,
-	},
-#else
-	{
+	{//xxxxM for userdata
 		.name = "userdata",
 		.offset=MTDPART_OFS_APPEND,
 		.size=MTDPART_SIZ_FULL,
 	},
-#endif
 };
 
 static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
