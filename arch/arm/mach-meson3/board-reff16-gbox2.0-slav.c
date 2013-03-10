@@ -89,6 +89,54 @@
 static int suspend_state=0;
 #endif
 
+/* GPIO Defines */
+// LEDS
+#define GPIO_LED_STATUS ( GPIOAO_bank_bit0_11(10) << 16 ) | GPIOAO_bit_bit0_11(10)
+#define GPIO_LED_POWER  ( GPIOAO_bank_bit0_11(11) << 16 ) | GPIOAO_bit_bit0_11(11)
+// ETHERNET
+#define GPIO_ETH_RESET  ( GPIOD_bank_bit0_9(7)    << 16 ) | GPIOD_bit_bit0_9(7)
+// BUTTONS
+#define GPIO_KEY_POWER  ( GPIOAO_bank_bit0_11(3)  << 16 ) | GPIOAO_bit_bit0_11(3)
+// POWERSUPPLIES
+#define GPIO_PWR_USB_B  ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
+#define GPIO_PWR_VCCIO  ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
+#define GPIO_PWR_VCCK   ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
+#define GPIO_PWR_HDMI   ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
+// SOUND
+#define GPIO_SND_SPK_MUTE		  ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
+#define GPIO_SND_HEADPHONE_PLUGED ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
+
+#if defined(CONFIG_LEDS_GPIO)
+/* LED Class Support for the leds */
+static struct gpio_led aml_led_pins[] = {
+	{
+		.name		 = "Powerled",
+		.default_trigger = "default-on",
+		.gpio		 = GPIO_LED_POWER,
+		.active_low	 = 0,
+	},
+	{
+		.name		 = "Statusled",
+		.default_trigger = "none",
+		.gpio		 = GPIO_LED_STATUS,
+		.active_low	 = 1,
+	},
+};
+
+static struct gpio_led_platform_data aml_led_data = {
+	.leds	  = aml_led_pins,
+	.num_leds = ARRAY_SIZE(aml_led_pins),
+};
+
+static struct platform_device aml_leds = {
+	.name	= "leds-gpio",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &aml_led_data,
+	}
+};
+#endif
+
 #if defined(CONFIG_JPEGLOGO)
 static struct resource jpeglogo_resources[] = {
     [0] = {
@@ -178,10 +226,9 @@ int _key_code_list[] = {KEY_POWER};
 
 static inline int key_input_init_func(void)
 {
-        set_gpio_mode(GPIOAO_bank_bit0_11(3), GPIOAO_bit_bit0_11(3), GPIO_INPUT_MODE);
-//    WRITE_AOBUS_REG(AO_RTC_ADDR0, (READ_AOBUS_REG(AO_RTC_ADDR0) &~(1<<11)));
-//    WRITE_AOBUS_REG(AO_RTC_ADDR1, (READ_AOBUS_REG(AO_RTC_ADDR1) &~(1<<3)));
-    return 0;
+	// Power Button, GPIO AO3, ACTIVE LOW
+	gpio_direction_input(GPIO_KEY_POWER);
+	return 0;
 }
 static inline int key_scan(int *key_state_list)
 {
@@ -196,8 +243,7 @@ static inline int key_scan(int *key_state_list)
 	 	}
 	 else
 	 #endif
-    key_state_list[0] = get_gpio_val(GPIOAO_bank_bit0_11(3), GPIOAO_bit_bit0_11(3))?0:1;
-//    key_state_list[0] = ((READ_AOBUS_REG(AO_RTC_ADDR1) >> 2) & 1) ? 0 : 1;
+    key_state_list[0] = gpio_get_value(GPIO_KEY_POWER) ? 0 : 1 ;
     return ret;
 }
 
@@ -206,7 +252,7 @@ static  struct key_input_platform_data  key_input_pdata = {
     .fuzz_time = 60,
     .key_code_list = &_key_code_list[0],
     .key_num = ARRAY_SIZE(_key_code_list),
-.scan_func = key_scan,
+	.scan_func = key_scan,
     .init_func = key_input_init_func,
     .config =  2, 	// 0: interrupt;    	2: polling;
 };
@@ -367,18 +413,13 @@ static void set_usb_a_vbus_power(char is_power_on)
 
 static void set_usb_b_vbus_power(char is_power_on)
 { /*wifi rtl8188cus power control*/
-#define USB_B_POW_GPIO         GPIOC_bank_bit0_15(5)
-#define USB_B_POW_GPIO_BIT     GPIOC_bit_bit0_15(5)
-#define USB_B_POW_GPIO_BIT_ON   1
-#define USB_B_POW_GPIO_BIT_OFF  0
+    /* USB +3v3 Power Enable internal port, GPIO C5, ACTIVE HIGH */
     if(is_power_on) {
-        printk(KERN_INFO "set usb b port power on (board gpio %d)!\n",USB_B_POW_GPIO_BIT);
-        set_gpio_mode(USB_B_POW_GPIO, USB_B_POW_GPIO_BIT, GPIO_OUTPUT_MODE);
-        set_gpio_val(USB_B_POW_GPIO, USB_B_POW_GPIO_BIT, USB_B_POW_GPIO_BIT_ON);
-    } else    {
-        printk(KERN_INFO "set usb b port power off (board gpio %d)!\n",USB_B_POW_GPIO_BIT);
-        set_gpio_mode(USB_B_POW_GPIO, USB_B_POW_GPIO_BIT, GPIO_OUTPUT_MODE);
-        set_gpio_val(USB_B_POW_GPIO, USB_B_POW_GPIO_BIT, USB_B_POW_GPIO_BIT_OFF);
+        printk(KERN_INFO "set usb b port power on.\n");
+	gpio_direction_output(GPIO_PWR_USB_B, 1);
+    } else {
+        printk(KERN_INFO "set usb b port power off.!\n");
+	gpio_direction_output(GPIO_PWR_USB_B, 0);
     }
 }
 
@@ -868,20 +909,19 @@ static struct platform_device aml_audio = {
 
 int aml_m3_is_hp_pluged(void)
 {
+	gpio_get_value( GPIO_SND_HEADPHONE_PLUGED );
 	return 0; //return 1: hp pluged, 0: hp unpluged.
 }
 
-void mute_spk(struct snd_soc_codec* codec, int flag)
+void mute_spk(void* codec, int flag)
 {
 #ifdef _AML_M3_HW_DEBUG_
 	printk("***Entered %s:%s\n", __FILE__,__func__);
 #endif
-    if(flag){
-		set_gpio_val(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), 1);	 // mute speak
-		set_gpio_mode(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), GPIO_OUTPUT_MODE);
-	}else{
-		set_gpio_val(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), 0);	 // unmute speak
-		set_gpio_mode(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), GPIO_OUTPUT_MODE);
+    if ( flag ) {
+		gpio_direction_output(GPIO_SND_SPK_MUTE, 1);
+	} else {
+		gpio_direction_output(GPIO_SND_SPK_MUTE, 0);
 	}
 }
 
@@ -1093,9 +1133,9 @@ static void set_gpio_suspend_resume(int power_on)
 }
 
 static struct meson_pm_config aml_pm_pdata = {
-    .pctl_reg_base = IO_APB_BUS_BASE,
-    .mmc_reg_base = APB_REG_ADDR(0x1000),
-    .hiu_reg_base = CBUS_REG_ADDR(0x1000),
+    .pctl_reg_base = (void __iomem *)IO_APB_BUS_BASE,
+    .mmc_reg_base = (void __iomem *)APB_REG_ADDR(0x1000),
+    .hiu_reg_base = (void __iomem *)CBUS_REG_ADDR(0x1000),
     .power_key = (1<<8),
     .ddr_clk = 0x00110820,
     .sleepcount = 128,
@@ -1114,53 +1154,33 @@ static struct platform_device aml_pm_device = {
 #endif
 
 #if defined(CONFIG_I2C_SW_AML)
-#define MESON3_I2C_PREG_GPIOX_OE		CBUS_REG_ADDR(PREG_PAD_GPIO4_EN_N)
-#define MESON3_I2C_PREG_GPIOX_OUTLVL	CBUS_REG_ADDR(PREG_PAD_GPIO4_O)
-#define MESON3_I2C_PREG_GPIOX_INLVL	CBUS_REG_ADDR(PREG_PAD_GPIO4_I)
+
+#define MESON3_I2C_PREG_GPIOX_OE CBUS_REG_ADDR(PREG_PAD_GPIO4_EN_N)
+#define MESON3_I2C_PREG_GPIOX_OUTLVL CBUS_REG_ADDR(PREG_PAD_GPIO4_O)
+#define MESON3_I2C_PREG_GPIOX_INLVL CBUS_REG_ADDR(PREG_PAD_GPIO4_I)
 
 static struct aml_sw_i2c_platform aml_sw_i2c_plat = {
     .sw_pins = {
-        .scl_reg_out        = MESON3_I2C_PREG_GPIOX_OUTLVL,
-        .scl_reg_in     = MESON3_I2C_PREG_GPIOX_INLVL,
-        .scl_bit            = 26, 
-        .scl_oe         = MESON3_I2C_PREG_GPIOX_OE,
-        .sda_reg_out        = MESON3_I2C_PREG_GPIOX_OUTLVL,
-        .sda_reg_in     = MESON3_I2C_PREG_GPIOX_INLVL,
-        .sda_bit            = 25,
-        .sda_oe         = MESON3_I2C_PREG_GPIOX_OE,
-    },  
-#ifdef CONFIG_AM_ITE9133
-    .udelay         = 5,
-#else 
-    .udelay         = 2,
- #endif
-    .timeout            = 100,
+        .scl_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
+        .scl_reg_in = MESON3_I2C_PREG_GPIOX_INLVL,
+        .scl_bit = 26,
+        .scl_oe = MESON3_I2C_PREG_GPIOX_OE,
+        .sda_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
+        .sda_reg_in = MESON3_I2C_PREG_GPIOX_INLVL,
+        .sda_bit = 25,
+        .sda_oe = MESON3_I2C_PREG_GPIOX_OE,
+    },
+    .udelay = 2,
+    .timeout = 100,
 };
 
-#if 0
-static struct aml_sw_i2c_platform aml_sw_i2c_plat = {
-    .sw_pins = {
-        .scl_reg_out        = MESON_I2C_PREG_GPIOB_OUTLVL,
-        .scl_reg_in     = MESON_I2C_PREG_GPIOB_INLVL,
-        .scl_bit            = 2,    /*MESON_I2C_MASTER_A_GPIOB_2_REG*/
-        .scl_oe         = MESON_I2C_PREG_GPIOB_OE,
-        .sda_reg_out        = MESON_I2C_PREG_GPIOB_OUTLVL,
-        .sda_reg_in     = MESON_I2C_PREG_GPIOB_INLVL,
-        .sda_bit            = 3,    /*MESON_I2C_MASTER_A_GPIOB_3_BIT*/
-        .sda_oe         = MESON_I2C_PREG_GPIOB_OE,
-    },  
-    .udelay         = 2,
-    .timeout            = 100,
-};
-#endif
 static struct platform_device aml_sw_i2c_device = {
-    .name         = "aml-sw-i2c",
-    .id       = -1,
+    .name = "aml-sw-i2c",
+    .id = 0,
     .dev = {
         .platform_data = &aml_sw_i2c_plat,
     },
 };
-
 #endif
 
 #ifdef CONFIG_AMLOGIC_PM
@@ -1282,7 +1302,6 @@ static struct platform_device aml_efuse_device = {
 };
 #endif
 
-
 #if  defined(CONFIG_AM_TV_OUTPUT)||defined(CONFIG_AM_TCON_OUTPUT)
 static struct resource vout_device_resources[] = {
     [0] = {
@@ -1299,6 +1318,7 @@ static struct platform_device vout_device = {
     .resource      = vout_device_resources,
 };
 #endif
+
 #if  defined(CONFIG_AM_TV_OUTPUT2)
 static struct resource vout2_device_resources[] = {
     [0] = {
@@ -1331,6 +1351,7 @@ static struct platform_device ppmgr_device = {
     .resource      = ppmgr_resources,
 };
 #endif
+
 #ifdef CONFIG_FREE_SCALE
 static struct resource freescale_resources[] = {
     [0] = {
@@ -1348,6 +1369,7 @@ static struct platform_device freescale_device =
     .resource       = freescale_resources,
 };
 #endif
+
 #ifdef CONFIG_USB_ANDROID
 #ifdef CONFIG_USB_ANDROID_MASS_STORAGE
 static struct usb_mass_storage_platform_data mass_storage_pdata = {
@@ -1530,34 +1552,42 @@ static struct platform_device aml_hdmi_device = {
     }
 };
 #endif
+
 #define ETH_PM_DEV
 #if defined(ETH_PM_DEV)
 #define ETH_MODE_RMII_EXTERNAL
 static void meson_eth_clock_enable(int flag)
 {
+    printk("meson_eth_clock_enable: %x\n", (unsigned int)flag );
 }
 
 static void meson_eth_reset(void)
 {
-    set_gpio_mode(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), GPIO_OUTPUT_MODE);
-    set_gpio_val(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), 0);
+    printk("meson_eth_reset\n");
+    // Ethernet Reset, GPIO D7, ACTIVE LOW
+    gpio_direction_output(GPIO_ETH_RESET, 0);
     mdelay(100);
-    set_gpio_val(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), 1);
+    gpio_set_value(GPIO_ETH_RESET, 1);
 }
-static struct aml_eth_platform_data  aml_pm_eth_platform_data ={
+
+static struct aml_eth_platform_data aml_pm_eth_platform_data = {
     .clock_enable = meson_eth_clock_enable,
     .reset = meson_eth_reset,
 };
 
 struct platform_device meson_device_eth = {
-	.name   = "ethernet_pm_driver",
-	.id     = -1,
-	.dev    = {
+	.name = "ethernet_pm_driver",
+	.id = -1,
+	.dev = {
 		.platform_data = &aml_pm_eth_platform_data,
 	}
 };
 #endif
+
 static struct platform_device __initdata *platform_devs[] = {
+#if defined(CONFIG_LEDS_GPIO)
+	&aml_leds,
+#endif
 #if defined(ETH_PM_DEV)
     &meson_device_eth,
 #endif
@@ -1679,39 +1709,29 @@ static int __init aml_i2c_init(void)
     return 0;
 }
 
-#define NET_EXT_CLK 1
+// #define NET_EXT_CLK
 static void __init eth_pinmux_init(void)
 {
-	
+	/* Setup Ethernet and Pinmux */
    CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_6,(3<<17));//reg6[17/18]=0
    #ifdef NET_EXT_CLK
        eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
    #else
        eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_OUT_GPIOY0_REG6_17, 0);
    #endif
-	
-    //power hold
-    //setbits_le32(P_PREG_AGPIO_O,(1<<8));
-    //clrbits_le32(P_PREG_AGPIO_EN_N,(1<<8));
-    //set_gpio_mode(GPIOA_bank_bit(4),GPIOA_bit_bit0_14(4),GPIO_OUTPUT_MODE);
-    //set_gpio_val(GPIOA_bank_bit(4),GPIOA_bit_bit0_14(4),1);
-
-    CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);           // Disable the Ethernet clocks
+	eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
+	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);           // Disable the Ethernet clocks
 	// ---------------------------------------------
 	// Test 50Mhz Input Divide by 2
 	// ---------------------------------------------
 	// Select divide by 2
-    CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<3));     // desc endianess "same order" 
-    CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<2));     // ata endianess "little"
-    SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1 << 1));     // divide by 2 for 100M
-    SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);            // enable Ethernet clocks
-    udelay(100);
-
-    // ethernet reset
-    set_gpio_mode(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), GPIO_OUTPUT_MODE);
-    set_gpio_val(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), 0);
-    mdelay(100);
-    set_gpio_val(GPIOD_bank_bit0_9(7), GPIOD_bit_bit0_9(7), 1);
+        CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<3));     // desc endianess "same order" 
+	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<2));     // ata endianess "little"
+	SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1 << 1));     // divide by 2 for 100M
+	SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);            // enable Ethernet clocks
+	udelay(100);
+	/* Reset Ethernet */
+	meson_eth_reset();
 }
 
 static void __init device_pinmux_init(void )
@@ -1803,37 +1823,19 @@ static void __init power_hold(void)
 		
     //VCCx2 power up
     printk(KERN_INFO "set_vccx2 power up\n");
-//    set_gpio_mode(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), GPIO_OUTPUT_MODE);
-//    set_gpio_val(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), 0);
 }
 
 static void __init LED_PWM_REG0_init(void)
 {
-#if 1 	// PWM_C
+	// PWM_C
     printk(KERN_INFO "LED_PWM_REG0_init.\n");
-	 SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_2,(1<<2));
+	SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_2,(1<<2));
     WRITE_CBUS_REG(PWM_PWM_C, (0xff00<<16) |(0xff00<<0));
     WRITE_CBUS_REG(PWM_MISC_REG_CD, (1<<0)	// enable
-																			|(0<<4)	// PWM_A_CLK_SEL: 0:XTAL;  1:ddr_pll_clk;  2:clk81;  3:sys_pll_clk;
-																			|(0x7f<<8)	// PWM_A_CLK_DIV
-																			|(1<<15)	// PWM_A_CLK_EN
-																			);
-#else
-        // Enable VBG_EN
-    WRITE_CBUS_REG_BITS(PREG_AM_ANALOG_ADDR, 1, 0, 1);
-    // wire pm_gpioA_7_led_pwm = pin_mux_reg0[22];
-    WRITE_CBUS_REG(LED_PWM_REG0,(0 << 31)   |       // disable the overall circuit
-                                (0 << 30)   |       // 1:Closed Loop  0:Open Loop
-                                (0 << 16)   |       // PWM total count
-                                (0 << 13)   |       // Enable
-                                (1 << 12)   |       // enable
-                                (0 << 10)   |       // test
-                                (7 << 7)    |       // CS0 REF, Voltage FeedBack: about 0.505V
-                                (7 << 4)    |       // CS1 REF, Current FeedBack: about 0.505V
-                                READ_CBUS_REG(LED_PWM_REG0)&0x0f);           // DIMCTL Analog dimmer
-                                
-    WRITE_CBUS_REG_BITS(LED_PWM_REG0,1,0,4); //adust cpu1.2v   to 1.26V     
-#endif
+									|(0<<4)	// PWM_A_CLK_SEL: 0:XTAL;  1:ddr_pll_clk;  2:clk81;  3:sys_pll_clk;
+									|(0x7f<<8)	// PWM_A_CLK_DIV
+									|(1<<15)	// PWM_A_CLK_EN
+	);
 }
 
 #ifdef CONFIG_AML_SUSPEND
@@ -1844,15 +1846,12 @@ static __init void m1_init_machine(void)
 {
     meson_cache_init();
 #ifdef CONFIG_AML_SUSPEND
-		pm_power_suspend = meson_power_suspend;
+	pm_power_suspend = meson_power_suspend;
 #endif /*CONFIG_AML_SUSPEND*/
-    
+   
     power_hold();
-//    pm_power_off = power_off;		//Elvis fool
     device_clk_setting();
     device_pinmux_init();
-//    LED_PWM_REG0_init();
-
     platform_add_devices(platform_devs, ARRAY_SIZE(platform_devs));
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
@@ -1882,7 +1881,7 @@ static __initdata struct map_desc meson_video_mem_desc[] = {
         .type       = MT_MEMORY,
     },
 #endif
-// #ifdef CONFIG_AML_SECURE_DRIVER
+
 #ifdef CONFIG_AM_IPTV_SECURITY
     {
         .virtual    = PAGE_ALIGN(0xdfe00000),
@@ -1891,7 +1890,6 @@ static __initdata struct map_desc meson_video_mem_desc[] = {
         .type       = MT_MEMORY,
     },
 #endif
-
 };
 
 static __init void m1_map_io(void)
@@ -1918,13 +1916,12 @@ static __init void m1_fixup(struct machine_desc *mach, struct tag *tag, char **c
     m->nr_banks++;    
     pbank=&m->bank[m->nr_banks];
     pbank->start = PAGE_ALIGN(RESERVED_MEM_END+1);
-   size = PHYS_MEM_END-RESERVED_MEM_END;
+    size = PHYS_MEM_END-RESERVED_MEM_END;
 #ifdef CONFIG_AML_SUSPEND
     pbank->size  = (PHYS_MEM_END-RESERVED_MEM_END-SZ_1M) & PAGE_MASK;
 #else
     pbank->size  = (PHYS_MEM_END-RESERVED_MEM_END) & PAGE_MASK;
 #endif
-// #ifdef CONFIG_ENCRYPT
 #ifdef CONFIG_AM_IPTV_SECURITY
 	size -= SZ_1M;
 #endif
