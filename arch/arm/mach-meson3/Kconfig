@@ -197,6 +197,12 @@ config MACH_MESON3_STV_MBX_MC_A11
         help
                 Include support for the AML M3 MyGica A11 board platform.
 
+config MACH_MESON3_REFF16_GBOX_SLAV
+        select GENERIC_ALLOCATOR
+        bool "Support M3 (GBox Slav) MBX platform"
+        help
+          Support for G-Box Slav, based on a G-Box 2.0 hardware.
+
 config STV_RECOVERY
 	bool "make recovery partition visible"
 	default n
