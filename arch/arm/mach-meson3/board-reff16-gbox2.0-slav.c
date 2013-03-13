@@ -392,64 +392,62 @@ static struct platform_device deinterlace_device = {
 };
 #endif
 
-#if defined(CONFIG_AM_NAND)||defined(CONFIG_INAND)
-static struct mtd_partition multi_partition_info_512M[] = 
-{
-   
-#if defined(CONFIG_INAND)
-	   {
-		   .name = "bootloader",
+#if defined(CONFIG_AM_NAND)
+static struct mtd_partition multi_partition_info[] = 
+{ /* Hidden nandboot partition   
+	   { 0x00 to 0x400000
+		   .name = "nandboot",
 		   .offset = BOOTLOADER_OFFSET,
 		   .size = BOOTLOADER_SIZE,
 	   },
-	   {
-		   .name = "boot_env",
-		   .offset = CONFIG_ENV_OFFSET,
-		   .size = CONFIG_ENV_SIZE,
-	   },
-#endif
-    {
-	.name = "aml_logo",
-	.offset = 8*1024*1024,
-	.size=8*1024*1024,
-    },
-    {
-        .name = "recovery",
-        .offset = 16*1024*1024,
-        .size = 16*1024*1024,
-    },
-    {
-        .name = "boot",
-        .offset = 32*1024*1024,
-        .size = 16*1024*1024,
-    },
-    {
-        .name = "system",
-        .offset = 48*1024*1024,
-        .size = 256*1024*1024,
-    },
-    {
-        .name = "cache",
-        .offset = 304*1024*1024,
-        .size = 128*1024*1024,
-    },
+*/ 
+	{
+		.name   = "boot_env",
+		.offset = (12)*1024*1024,
+		.size   = 4*1024*1024,
+	},
+	{
+		.name   = "aml_logo",
+		.offset = (16)*1024*1024,
+		.size   = 16*1024*1024,
+	},
+	{
+		.name   = "recovery",
+		.offset = (16+16)*1024*1024,
+		.size   = 16*1024*1024,
+	},
+	{
+		.name   = "boot",
+		.offset = (16+16+16)*1024*1024,
+		.size   = 20*1024*1024,
+	},
+	{
+		.name   = "system",
+		.offset = (16+16+16+20)*1024*1024,
+		.size   = 512*1024*1024,
+	},
+	{
+		.name   = "cache",
+		.offset = (16+16+16+20+512)*1024*1024,
+		.size   = 192*1024*1024,
+	},
 #ifdef CONFIG_AML_NFTL
-   {
-        .name = "userdata",
-        .offset=432*1024*1024,
-        .size=512*1024*1024,
-    },
-    {
-	.name = "NFTL_Part",
-	.offset = MTDPART_OFS_APPEND,
-	.size = MTDPART_SIZ_FULL,
-    },
+	{
+		.name   = "userdata",
+		.offset = (16+16+16+20+512+192)*1024*1024,
+		.size   = 1024*1024*1024,
+	},
+	{
+		.name   = "NFTL_Part",
+		.offset = MTDPART_OFS_APPEND,
+		.size   = MTDPART_SIZ_FULL,
+	},
 #else
-    {
-        .name = "userdata",
-        .offset=MTDPART_OFS_APPEND,
-        .size=MTDPART_SIZ_FULL,
-    },
+	{
+		.name   = "userdata",
+		.offset = MTDPART_OFS_APPEND,
+		.size   = MTDPART_SIZ_FULL,
+	},
 #endif
 };
 
@@ -511,19 +509,8 @@ static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
 {
     printk("set nand parts for chip %lldMB\n", (size/(1024*1024)));
 
-    if (size/(1024*1024) == 512) {
-        chip->partitions = multi_partition_info_512M;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_512M);
-        }
-    else if (size/(1024*1024) >= 1024) {
-        chip->partitions = multi_partition_info_1G_or_More;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_1G_or_More);
-        }
-    else {
-        chip->partitions = multi_partition_info_512M;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_512M);
-        }
-    return;
+    chip->partitions = multi_partition_info_1G_or_More;
+    chip->nr_partitions = ARRAY_SIZE(multi_partition_info_1G_or_More);
 }
 
 static struct aml_nand_platform aml_nand_mid_platform[] = {
