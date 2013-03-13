@@ -216,56 +216,6 @@ static struct platform_device adc_kp_device = {
 };
 #endif
 
-#if defined(CONFIG_KEY_INPUT_CUSTOM_AM) || defined(CONFIG_KEY_INPUT_CUSTOM_AM_MODULE)
-#include <linux/input.h>
-#include <linux/input/key_input.h>
-
-int _key_code_list[] = {KEY_POWER};
-
-static inline int key_input_init_func(void)
-{
-	// Power Button, GPIO AO3, ACTIVE LOW
-	gpio_direction_input(GPIO_KEY_POWER);
-	return 0;
-}
-static inline int key_scan(int *key_state_list)
-{
-    int ret = 0;
-	 // GPIOAO_3
-	 #ifdef CONFIG_SUSPEND
-	 if(suspend_state)
-	 	{
-	 	// forse power key down
-	 	suspend_state--;
-	 	key_state_list[0] = 1;
-	 	}
-	 else
-	 #endif
-    key_state_list[0] = gpio_get_value(GPIO_KEY_POWER) ? 0 : 1 ;
-    return ret;
-}
-
-static  struct key_input_platform_data  key_input_pdata = {
-    .scan_period = 20,
-    .fuzz_time = 60,
-    .key_code_list = &_key_code_list[0],
-    .key_num = ARRAY_SIZE(_key_code_list),
-	.scan_func = key_scan,
-    .init_func = key_input_init_func,
-    .config =  2, 	// 0: interrupt;    	2: polling;
-};
-
-static struct platform_device input_device_key = {
-    .name = "m1-keyinput",
-    .id = 0,
-    .num_resources = 0,
-    .resource = NULL,
-    .dev = {
-        .platform_data = &key_input_pdata,
-    }
-};
-#endif
-
 #if defined(CONFIG_AM_IR_RECEIVER)
 #include <linux/input/irreceiver.h>
 
@@ -1634,9 +1584,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #endif
 #if defined(CONFIG_ADC_KEYPADS_AM)||defined(CONFIG_ADC_KEYPADS_AM_MODULE)
     &adc_kp_device,
-#endif
-#if defined(CONFIG_KEY_INPUT_CUSTOM_AM) || defined(CONFIG_KEY_INPUT_CUSTOM_AM_MODULE)
-    &input_device_key,
 #endif
 #if defined(CONFIG_AM_IR_RECEIVER)
     &irreceiver_device,
