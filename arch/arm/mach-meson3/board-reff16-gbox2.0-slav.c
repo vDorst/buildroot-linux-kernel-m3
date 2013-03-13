@@ -288,58 +288,6 @@ static struct platform_device fb_device = {
 };
 #endif
 
-#if defined(CONFIG_AMLOGIC_SPI_NOR)
-static struct mtd_partition spi_partition_info[] = {
-
-            {
-                    .name = "bootloader",
-                    .offset = 0,
-                   .size = 0x60000,
-            },
-  
-    {
-        .name = "ubootenv",
-        .offset = 0x80000,
-        .size = 0x2000,
-},
-    {
-	.name = "hashtable",
-	.offset = 0x100000,
-	.size = 0x2000,
-    },
-    /* Hide recovery partition
-            {
-                    .name = "recovery",
-                    .offset = 0x40000,
-                    .size = 0x1c0000,
-            },
-    //*/
-};
-
-static struct flash_platform_data amlogic_spi_platform = {
-    .parts = spi_partition_info,
-    .nr_parts = ARRAY_SIZE(spi_partition_info),
-};
-
-static struct resource amlogic_spi_nor_resources[] = {
-    {
-        .start = 0xc1800000,
-        .end = 0xc1ffffff,
-        .flags = IORESOURCE_MEM,
-    },
-};
-
-static struct platform_device amlogic_spi_nor_device = {
-    .name = "AMLOGIC_SPI_NOR",
-    .id = -1,
-    .num_resources = ARRAY_SIZE(amlogic_spi_nor_resources),
-    .resource = amlogic_spi_nor_resources,
-    .dev = {
-        .platform_data = &amlogic_spi_platform,
-    },
-};
-#endif
-
 #ifdef CONFIG_USB_DWC_OTG_HCD
 #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE
 static set_vbus_valid_ext_fun(unsigned int id,char val)
@@ -1576,11 +1524,8 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_KEYPADS_AM)||defined(CONFIG_VIRTUAL_REMOTE)||defined(CONFIG_KEYPADS_AM_MODULE)
     &input_device,
 #endif
-#if defined(CONFIG_AMLOGIC_SPI_NOR)
-    &amlogic_spi_nor_device,
-#endif
 #ifdef CONFIG_SARADC_AM
-&saradc_device,
+    &saradc_device,
 #endif
 #if defined(CONFIG_ADC_KEYPADS_AM)||defined(CONFIG_ADC_KEYPADS_AM_MODULE)
     &adc_kp_device,
