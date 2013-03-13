@@ -94,17 +94,15 @@ static int suspend_state=0;
 #define GPIO_LED_STATUS ( GPIOAO_bank_bit0_11(10) << 16 ) | GPIOAO_bit_bit0_11(10)
 #define GPIO_LED_POWER  ( GPIOAO_bank_bit0_11(11) << 16 ) | GPIOAO_bit_bit0_11(11)
 // ETHERNET
-#define GPIO_ETH_RESET  ( GPIOD_bank_bit0_9(7)    << 16 ) | GPIOD_bit_bit0_9(7)
-// BUTTONS
-#define GPIO_KEY_POWER  ( GPIOAO_bank_bit0_11(3)  << 16 ) | GPIOAO_bit_bit0_11(3)
+#define GPIO_ETH_RESET  GPIO_D(7)
 // POWERSUPPLIES
-#define GPIO_PWR_USB_B  ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
-#define GPIO_PWR_VCCIO  ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
-#define GPIO_PWR_VCCK   ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
-#define GPIO_PWR_HDMI   ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
+#define GPIO_PWR_USB_B  GPIO_C(5)  // ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
+#define GPIO_PWR_VCCIO  GPIO_AO(2) // ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
+#define GPIO_PWR_VCCK   GPIO_AO(6) // ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
+#define GPIO_PWR_HDMI   GPIO_D(6)  // ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
 // SOUND
-#define GPIO_SND_SPK_MUTE		  ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
-#define GPIO_SND_HEADPHONE_PLUGED ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
+#define GPIO_SND_SPK_MUTE	  GPIO_C(4) // ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
+#define GPIO_SND_HEADPHONE_PLUGED GPIO_A(19) // ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
 
 #if defined(CONFIG_LEDS_GPIO)
 /* LED Class Support for the leds */
