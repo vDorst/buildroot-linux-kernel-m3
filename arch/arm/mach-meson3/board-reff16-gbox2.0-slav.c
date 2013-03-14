@@ -97,9 +97,9 @@ static int suspend_state=0;
 #define GPIO_ETH_RESET  GPIO_D(7)
 // POWERSUPPLIES
 #define GPIO_PWR_USB_B  GPIO_C(5)  // ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
-#define GPIO_PWR_VCCIO  GPIO_AO(2) // ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
-#define GPIO_PWR_VCCK   GPIO_AO(6) // ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
-#define GPIO_PWR_HDMI   GPIO_D(6)  // ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
+// #define GPIO_PWR_VCCIO  GPIO_AO(2) // ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
+// #define GPIO_PWR_VCCK   GPIO_AO(6) // ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
+// #define GPIO_PWR_HDMI   GPIO_D(6)  // ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
 // SOUND
 #define GPIO_SND_SPK_MUTE	  GPIO_C(4) // ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
 #define GPIO_SND_HEADPHONE_PLUGED GPIO_A(19) // ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
@@ -536,8 +536,8 @@ static struct aml_nand_platform aml_nand_mid_platform[] = {
 		.platform_nand_data = {
 			.chip =  {
 				.nr_chips = 4,
-				.nr_partitions = ARRAY_SIZE(multi_partition_info_512M),
-				.partitions = multi_partition_info_512M,
+				.nr_partitions = ARRAY_SIZE(multi_partition_info),
+				.partitions = multi_partition_info,
 				.set_parts = nand_set_parts,
 				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE | NAND_TWO_PLANE_MODE),
 			},
@@ -1469,7 +1469,7 @@ struct platform_device meson_device_eth = {
 
 static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_LEDS_GPIO)
-	&aml_leds,
+// 	&aml_leds,
 #endif
 #if defined(ETH_PM_DEV)
     &meson_device_eth,
@@ -1590,13 +1590,12 @@ static int __init aml_i2c_init(void)
 static void __init eth_pinmux_init(void)
 {
 	/* Setup Ethernet and Pinmux */
-   CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_6,(3<<17));//reg6[17/18]=0
-   #ifdef NET_EXT_CLK
-       eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
-   #else
-       eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_OUT_GPIOY0_REG6_17, 0);
-   #endif
+	CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_6,(3<<17));//reg6[17/18]=0
+#ifdef NET_EXT_CLK
 	eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
+#else
+	eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_OUT_GPIOY0_REG6_17, 0);
+#endif
 	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);           // Disable the Ethernet clocks
 	// ---------------------------------------------
 	// Test 50Mhz Input Divide by 2
