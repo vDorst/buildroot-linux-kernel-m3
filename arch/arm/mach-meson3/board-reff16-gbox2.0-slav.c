@@ -403,15 +403,15 @@ static struct mtd_partition multi_partition_info[] =
 
 static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
 {
-    printk("set nand parts for chip %lldMB\n", (size/(1024*1024)));
+	printk("set nand parts for chip %lldMB\n", (size/(1024*1024)));
 
-    chip->partitions = multi_partition_info_1G_or_More;
-    chip->nr_partitions = ARRAY_SIZE(multi_partition_info_1G_or_More);
+	chip->partitions = multi_partition_info;
+	chip->nr_partitions = ARRAY_SIZE(multi_partition_info);
 }
 
 static struct aml_nand_platform aml_nand_mid_platform[] = {
 #ifdef CONFIG_AML_NAND_ENV
-{
+	{
 		.name = NAND_BOOT_NAME,
 		.chip_enable_pad = AML_NAND_CE0,
 		.ready_busy_pad = AML_NAND_CE0,
@@ -420,12 +420,12 @@ static struct aml_nand_platform aml_nand_mid_platform[] = {
 				.nr_chips = 1,
 				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE),
 			},
-    	},
-			.T_REA = 20,
-			.T_RHOH = 15,
+		},
+		.T_REA = 20,
+		.T_RHOH = 15,
 	},
 #endif
-{
+	{
 		.name = NAND_MULTI_NAME,
 		.chip_enable_pad = (AML_NAND_CE0 | (AML_NAND_CE1 << 4) | (AML_NAND_CE2 << 8) | (AML_NAND_CE3 << 12)),
 		.ready_busy_pad = (AML_NAND_CE0 | (AML_NAND_CE0 << 4) | (AML_NAND_CE1 << 8) | (AML_NAND_CE1 << 12)),
@@ -437,9 +437,9 @@ static struct aml_nand_platform aml_nand_mid_platform[] = {
 				.set_parts = nand_set_parts,
 				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE | NAND_TWO_PLANE_MODE),
 			},
-    	},
-			.T_REA = 20,
-			.T_RHOH = 15,
+		},
+		.T_REA = 20,
+		.T_RHOH = 15,
 	}
 };
 
@@ -449,23 +449,24 @@ struct aml_nand_device aml_nand_mid_device = {
 };
 
 static struct resource aml_nand_resources[] = {
-    {
-        .start = 0xc1108600,
-        .end = 0xc1108624,
-        .flags = IORESOURCE_MEM,
-    },
+	{
+		.start = 0xc1108600,
+		.end = 0xc1108624,
+		.flags = IORESOURCE_MEM,
+	},
 };
 
 static struct platform_device aml_nand_device = {
-    .name = "aml_m3_nand",
-    .id = 0,
-    .num_resources = ARRAY_SIZE(aml_nand_resources),
-    .resource = aml_nand_resources,
-    .dev = {
+	.name = "aml_m3_nand",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(aml_nand_resources),
+	.resource = aml_nand_resources,
+	.dev = {
 		.platform_data = &aml_nand_mid_device,
-    },
+	},
 };
 #endif
+
 #if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
 /******************************
 *WL_REG_ON	-->GPIOC_8
