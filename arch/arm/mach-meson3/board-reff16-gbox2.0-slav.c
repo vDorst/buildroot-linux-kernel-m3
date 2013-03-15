@@ -52,13 +52,11 @@
 #include <mach/clk_set.h>
 #include "board-m3-reff16.h"
 
-
 #ifdef CONFIG_ANDROID_PMEM
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
 #include <linux/android_pmem.h>
 #endif
-
 
 #ifdef CONFIG_AMLOGIC_PM
 #include <linux/power_supply.h>
@@ -71,10 +69,6 @@
 
 #ifdef CONFIG_SUSPEND
 #include <mach/pm.h>
-#endif
-
-#ifdef CONFIG_VIDEO_AMLOGIC_CAPTURE
-#include <media/amlogic/aml_camera.h>
 #endif
 
 #ifdef CONFIG_EFUSE
@@ -91,49 +85,14 @@ static int suspend_state=0;
 
 /* GPIO Defines */
 // LEDS
-#define GPIO_LED_STATUS ( GPIOAO_bank_bit0_11(10) << 16 ) | GPIOAO_bit_bit0_11(10)
-#define GPIO_LED_POWER  ( GPIOAO_bank_bit0_11(11) << 16 ) | GPIOAO_bit_bit0_11(11)
+    /* Don't have any to control. */
 // ETHERNET
 #define GPIO_ETH_RESET  GPIO_D(7)
 // POWERSUPPLIES
-#define GPIO_PWR_USB_B  GPIO_C(5)  // ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
-// #define GPIO_PWR_VCCIO  GPIO_AO(2) // ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
-// #define GPIO_PWR_VCCK   GPIO_AO(6) // ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
-// #define GPIO_PWR_HDMI   GPIO_D(6)  // ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
+
 // SOUND
 #define GPIO_SND_SPK_MUTE	  GPIO_C(4) // ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
 #define GPIO_SND_HEADPHONE_PLUGED GPIO_A(19) // ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
-
-#if defined(CONFIG_LEDS_GPIO)
-/* LED Class Support for the leds */
-static struct gpio_led aml_led_pins[] = {
-	{
-		.name		 = "Powerled",
-		.default_trigger = "default-on",
-		.gpio		 = GPIO_LED_POWER,
-		.active_low	 = 0,
-	},
-	{
-		.name		 = "Statusled",
-		.default_trigger = "none",
-		.gpio		 = GPIO_LED_STATUS,
-		.active_low	 = 1,
-	},
-};
-
-static struct gpio_led_platform_data aml_led_data = {
-	.leds	  = aml_led_pins,
-	.num_leds = ARRAY_SIZE(aml_led_pins),
-};
-
-static struct platform_device aml_leds = {
-	.name	= "leds-gpio",
-	.id	= -1,
-	.dev	= {
-		.platform_data	= &aml_led_data,
-	}
-};
-#endif
 
 #if defined(CONFIG_JPEGLOGO)
 static struct resource jpeglogo_resources[] = {
@@ -1468,9 +1427,6 @@ struct platform_device meson_device_eth = {
 #endif
 
 static struct platform_device __initdata *platform_devs[] = {
-#if defined(CONFIG_LEDS_GPIO)
-// 	&aml_leds,
-#endif
 #if defined(ETH_PM_DEV)
     &meson_device_eth,
 #endif
