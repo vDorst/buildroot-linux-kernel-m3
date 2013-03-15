@@ -476,16 +476,6 @@ static struct resource amlogic_card_resource[] = {
     }
 };
 
-static void inand_extern_init(void)
-{
-	printk("inand_extern_init !\n");
-   CLEAR_CBUS_REG_MASK(PAD_PULL_UP_REG3, (0xf<<0));//data pull up
-   CLEAR_CBUS_REG_MASK(PAD_PULL_UP_REG3, (0x3<<10)); //clk cmd pull
-   CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_2, (0x1f<<22)); //clr nand ce&data
-   SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_6, (0x1f<<25)); //set sdio c cmd&data
-   SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_6, (0x1<<24)); //set sdio c clk
-}	
-	
 static struct aml_card_info  amlogic_card_info[] = {
     [0] = {
         .name = "sd_card",
@@ -506,29 +496,6 @@ static struct aml_card_info  amlogic_card_info[] = {
         .card_wp_input_mask = PREG_IO_30_MASK,
         .card_extern_init = 0,
     },
-#if defined(CONFIG_INAND)
-[1] = {
-   .name = "inand_card",
-   .work_mode = CARD_HW_MODE,
-   .io_pad_type = SDHC_BOOT_0_11,
-   .card_ins_en_reg = 0,
-   .card_ins_en_mask = 0,
-   .card_ins_input_reg = 0,
-   .card_ins_input_mask = 0,
-   .card_power_en_reg = 0,
-   .card_power_en_mask = 0,
-   .card_power_output_reg = 0,
-   .card_power_output_mask = 0,
-   .card_power_en_lev = 0,
-   .card_wp_en_reg = 0,
-   .card_wp_en_mask = 0,
-   .card_wp_input_reg = 0,
-   .card_wp_input_mask = 0,
-   .card_extern_init = inand_extern_init,
-   .partitions = multi_partition_info_512M,
-   .nr_partitions = ARRAY_SIZE(multi_partition_info_512M),
-     },
-#endif
 };
 
 static struct aml_card_platform amlogic_card_platform = {
