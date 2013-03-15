@@ -92,7 +92,6 @@ static int suspend_state=0;
 
 // SOUND
 #define GPIO_SND_SPK_MUTE	  GPIO_C(4) // ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
-#define GPIO_SND_HEADPHONE_PLUGED GPIO_A(19) // ( GPIOA_bank_bit0_27(19)   << 16 ) | GPIOA_bank_bit0_27(19)
 
 #if defined(CONFIG_JPEGLOGO)
 static struct resource jpeglogo_resources[] = {
@@ -267,15 +266,7 @@ static void set_usb_a_vbus_power(char is_power_on)
 }
 
 static void set_usb_b_vbus_power(char is_power_on)
-{ /*wifi rtl8188cus power control*/
-    /* USB +3v3 Power Enable internal port, GPIO C5, ACTIVE HIGH */
-    if(is_power_on) {
-        printk(KERN_INFO "set usb b port power on.\n");
-	gpio_direction_output(GPIO_PWR_USB_B, 1);
-    } else {
-        printk(KERN_INFO "set usb b port power off.!\n");
-	gpio_direction_output(GPIO_PWR_USB_B, 0);
-    }
+{ 
 }
 
 //usb_a is OTG port
@@ -407,60 +398,6 @@ static struct mtd_partition multi_partition_info[] =
 		.offset = MTDPART_OFS_APPEND,
 		.size   = MTDPART_SIZ_FULL,
 	},
-#endif
-};
-
-static struct mtd_partition multi_partition_info_1G_or_More[] = 
-{
-#ifdef CONFIG_AML_NAND_ENV
-    {
-	.name = "ubootenv",
-	.offset = 8*1024*1024,
-	.size = 4*1024*1024,
-    },
-#endif
-    {
-	.name = "aml_logo",
-	.offset = 12*1024*1024,
-	.size = 16*1024*1024,
-    },
-    {
-        .name = "recovery",
-        .offset = 28*1024*1024,
-        .size = 16*1024*1024,
-    },
-    {
-        .name = "boot",
-        .offset = 44*1024*1024,
-        .size = 20*1024*1024,
-    },
-	{
-        .name = "system",
-        .offset = 64*1024*1024,
-        .size = 512*1024*1024,
-    },
-    {
-        .name = "cache",
-        .offset = 576*1024*1024,
-        .size = 192*1024*1024,
-    },
-#ifdef CONFIG_AML_NFTL
-   {
-        .name = "userdata",
-        .offset = 768*1024*1024,
-        .size = 512*1024*1024,
-    },
-    {
-	.name = "NFTL_Part",
-	.offset = MTDPART_OFS_APPEND,
-	.size = MTDPART_SIZ_FULL,
-    },
-#else
-    {
-        .name = "userdata",
-        .offset = MTDPART_OFS_APPEND,
-        .size = MTDPART_SIZ_FULL,
-    },
 #endif
 };
 
@@ -751,7 +688,6 @@ static struct platform_device aml_audio = {
 
 int aml_m3_is_hp_pluged(void)
 {
-	gpio_get_value( GPIO_SND_HEADPHONE_PLUGED );
 	return 0; //return 1: hp pluged, 0: hp unpluged.
 }
 
