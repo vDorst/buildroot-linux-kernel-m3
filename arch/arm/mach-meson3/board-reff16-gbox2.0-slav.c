@@ -467,74 +467,6 @@ static struct platform_device aml_nand_device = {
 };
 #endif
 
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
-/******************************
-*WL_REG_ON	-->GPIOC_8
-*WIFI_32K		-->GPIOC_15(CLK_OUT1)
-*WIFIWAKE(WL_HOST_WAKE)-->GPIOX_11
-*******************************/
-//#define WL_REG_ON_USE_GPIOC_6
-void extern_wifi_set_enable(int enable)
-{
-	if(enable){
-#ifdef WL_REG_ON_USE_GPIOC_6
-		SET_CBUS_REG_MASK(PREG_PAD_GPIO2_O, (1<<6));
-#else
-		SET_CBUS_REG_MASK(PREG_PAD_GPIO2_O, (1<<8));
-#endif
-		printk("Enable WIFI  Module!\n");
-	}
-    	else{
-#ifdef WL_REG_ON_USE_GPIOC_6
-		CLEAR_CBUS_REG_MASK(PREG_PAD_GPIO2_O, (1<<6));
-#else
-		CLEAR_CBUS_REG_MASK(PREG_PAD_GPIO2_O, (1<<8));
-#endif
-		printk("Disable WIFI  Module!\n");
-	}
-}
-EXPORT_SYMBOL(extern_wifi_set_enable);
-
-static void wifi_set_clk_enable(int on)
-{
-    //set clk for wifi
-	printk("set WIFI CLK Pin GPIOC_15 32KHz ***%d\n",on);
-	WRITE_CBUS_REG(HHI_GEN_CLK_CNTL,(READ_CBUS_REG(HHI_GEN_CLK_CNTL)&(~(0x7f<<0)))|((0<<0)|(1<<8)|(7<<9)) );
-	CLEAR_CBUS_REG_MASK(PREG_PAD_GPIO2_EN_N, (1<<15));   
-	if(on)
-		SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_3, (1<<22));
-	else
-		CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_3, (1<<22));	
-}
-
-static void wifi_gpio_init(void)
-{
-#ifdef WL_REG_ON_USE_GPIOC_6
-    //set WL_REG_ON Pin GPIOC_6 out
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_0, (1<<16));
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_1, (1<<5));
-        CLEAR_CBUS_REG_MASK(PREG_PAD_GPIO2_EN_N, (1<<6));  //GPIOC_6
-#else
-    //set WL_REG_ON Pin GPIOC_8 out 
-   	CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_3, (1<<23));
-	CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_0, (1<<18));
-	CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_1, (1<<10));
-     	CLEAR_CBUS_REG_MASK(PREG_PAD_GPIO2_EN_N, (1<<8));  //GPIOC_8
-#endif
-}
-
-
-static void aml_wifi_bcm4018x_init()
-{
-	wifi_set_clk_enable(1);
-	wifi_gpio_init();
-	extern_wifi_set_enable(0);
-        msleep(5);
-	extern_wifi_set_enable(1);
-}
-
-#endif
-
 #if defined(CONFIG_CARDREADER)
 static struct resource amlogic_card_resource[] = {
     [0] = {
@@ -543,23 +475,6 @@ static struct resource amlogic_card_resource[] = {
         .flags = 0x200,
     }
 };
-
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
-#define GPIO_WIFI_HOSTWAKE  ((GPIOX_bank_bit0_31(11)<<16) |GPIOX_bit_bit0_31(11))
-void sdio_extern_init(void)
-{
-	printk("sdio_extern_init !\n");
-	SET_CBUS_REG_MASK(PAD_PULL_UP_REG4, (1<<11));
-	gpio_direction_input(GPIO_WIFI_HOSTWAKE);
-#if defined(CONFIG_BCM40181_WIFI)
-	gpio_enable_level_int(gpio_to_idx(GPIO_WIFI_HOSTWAKE), 1, 4);  //for 40181
-#endif
-#if defined(CONFIG_BCM40183_WIFI)
-	gpio_enable_edge_int(gpio_to_idx(GPIO_WIFI_HOSTWAKE), 0, 5);     //for 40183
-#endif 
-	//extern_wifi_set_enable(1);
-}
-#endif
 
 static void inand_extern_init(void)
 {
@@ -613,27 +528,6 @@ static struct aml_card_info  amlogic_card_info[] = {
    .partitions = multi_partition_info_512M,
    .nr_partitions = ARRAY_SIZE(multi_partition_info_512M),
      },
-#endif
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
-    [2] = {
-        .name = "sdio_card",
-        .work_mode = CARD_HW_MODE,
-        .io_pad_type = SDIO_A_GPIOX_0_3,
-        .card_ins_en_reg = 0,
-        .card_ins_en_mask = 0,
-        .card_ins_input_reg = 0,
-        .card_ins_input_mask = 0,
-        .card_power_en_reg = 0,
-        .card_power_en_mask = 0,
-        .card_power_output_reg = 0,
-        .card_power_output_mask = 0,
-        .card_power_en_lev = 1,
-        .card_wp_en_reg = 0,
-        .card_wp_en_mask = 0,
-        .card_wp_input_reg = 0,
-        .card_wp_input_mask = 0,
-        .card_extern_init = sdio_extern_init,
-    },
 #endif
 };
 
@@ -712,7 +606,7 @@ void mute_headphone(void* codec, int flag)
 	printk("***Entered %s:%s\n", __FILE__,__func__);
 #endif
 	reg_val = READ_APB_REG(APB_BASE+(0x18<<2));
-    if(flag){
+	if(flag){
 		reg_val |= 0xc0;
 		WRITE_APB_REG((APB_BASE+(0x18<<2)), reg_val);			// mute headphone
 	}else{
@@ -720,31 +614,6 @@ void mute_headphone(void* codec, int flag)
 		WRITE_APB_REG((APB_BASE+(0x18<<2)), reg_val);			// unmute headphone
 	}
 }
-
-#endif
-#if defined(CONFIG_SND_SOC_BT40183)
-
-static struct platform_device bt40183_audio = {
-    .name           = "bt40183_audio",
-    .id             = 1,
-    .resource       = aml_m3_audio_resource,
-    .num_resources  = ARRAY_SIZE(aml_m3_audio_resource),
-};
-
-static struct platform_device bt40183 = {
-    .name           = "BT40183",
-    .id             = -1,
-};
-
-#endif
-#ifdef CONFIG_SND_AML_M3_CS4334
-static struct platform_device aml_sound_card={
-       .name                   = "aml_m3_audio_cs4334",
-       .id                     = -1,
-       .resource               = aml_m3_audio_resource,
-       .num_resources          = ARRAY_SIZE(aml_m3_audio_resource),
-};
-
 /* --------------------------------------------------------------------------*/
 /**
  * * @brief  set_audio_codec_pinmux
@@ -759,6 +628,7 @@ static void __init set_audio_codec_pinmux(void)
     set_mio_mux(8, (1 << 27) | (1 << 26) | (1 << 25) | (1 << 24));
 }
 #endif
+
 #if defined(CONFIG_ANDROID_PMEM) || defined(CONFIG_CMEM)
 static struct android_pmem_platform_data pmem_data =
 {
@@ -1209,99 +1079,6 @@ static struct platform_device android_usb_device = {
 };
 #endif
 
-#ifdef CONFIG_BT_DEVICE
-#include <linux/bt-device.h>
-
-static struct platform_device bt_device = {
-	.name             = "bt-dev",
-	.id               = -1,
-};
-
-static void bt_device_init(void)
-{
-#ifdef CONFIG_BCM40183_WIFI
-        printk("-----------%s-----------\n", __FUNCTION__);
-        /* BT_RST_N GPIOD_3*/
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_0, 1<<23);
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_1, 1<<18);
-        set_gpio_val(GPIOD_bank_bit0_9(3), GPIOD_bit_bit0_9(3), 0); 
-        set_gpio_mode(GPIOD_bank_bit0_9(3), GPIOD_bit_bit0_9(3), GPIO_OUTPUT_MODE);
-
-        /* BT_REG_EN GPIOD_2*/
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_0, 1<<22);
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_1, 1<<19);
-        set_gpio_val(GPIOD_bank_bit0_9(2), GPIOD_bit_bit0_9(2), 0); 
-        set_gpio_mode(GPIOD_bank_bit0_9(2), GPIOD_bit_bit0_9(2), GPIO_OUTPUT_MODE);
-
-        /* BT_WAKE GPIOX_10*/
-        set_gpio_val(GPIOX_bank_bit0_31(10), GPIOX_bit_bit0_31(10), 0);
-        set_gpio_mode(GPIOD_bank_bit0_9(2), GPIOD_bit_bit0_9(2), GPIO_OUTPUT_MODE);
-
-        /*UART_A GPIOX_13~16*/
-        SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_4, 0xf<<10);
-
-        /*PCM GPIOX_17~20*/
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_8, 0xff<<24);
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_4, 0xf<<6);
-        CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_4, 0xf<<18);
-        SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_4, 0xf<<22);
-#endif /*CONFIG_BCM40183_WIFI*/
-}
-
-static void bt_device_on(void)
-{
-#ifdef CONFIG_BCM40183_WIFI
-        printk("-----------%s-----------\n", __FUNCTION__);
-        /* BT_REG_EN set to high */
-        set_gpio_val(GPIOD_bank_bit0_9(2), GPIOD_bit_bit0_9(2), 1);
-        msleep(50);
-        /* BT_RST_EN set to high */
-        set_gpio_val(GPIOD_bank_bit0_9(3), GPIOD_bit_bit0_9(3), 1);
-        /* BT_WAKE set to high */
-        set_gpio_val(GPIOX_bank_bit0_31(10), GPIOX_bit_bit0_31(10), 1);
-#endif /*CONFIG_BCM40183_WIFI*/
-}
-
-static void bt_device_off(void)
-{
-#ifdef CONFIG_BCM40183_WIFI
-        printk("-----------%s-----------\n", __FUNCTION__);
-        /* BT_REG_EN set to low */
-        set_gpio_val(GPIOD_bank_bit0_9(2), GPIOD_bit_bit0_9(2), 0);
-        /* BT_RST_EN set to low */
-        set_gpio_val(GPIOD_bank_bit0_9(3), GPIOD_bit_bit0_9(3), 0);
-        /* BT_WAKE set to low */
-        set_gpio_val(GPIOX_bank_bit0_31(10), GPIOX_bit_bit0_31(10), 0);
-#endif /*CONFIG_BCM40183_WIFI*/
-}
-
-static void bt_device_suspend(void)
-{
-#if defined(CONFIG_BCM40183_WIFI) & defined(BCM40181_POWER_ALWAYS_ON)
-        printk("-----------%s-----------\n", __FUNCTION__);
-        /* BT_WAKE set to low */
-        set_gpio_val(GPIOX_bank_bit0_31(10), GPIOX_bit_bit0_31(10), 0);
-#endif /*CONFIG_BCM40183_WIFI*/
-}
-
-static void bt_device_resume(void)
-{
-#if defined(CONFIG_BCM40183_WIFI) & defined(BCM40181_POWER_ALWAYS_ON)
-        printk("-----------%s-----------\n", __FUNCTION__);
-        /* BT_WAKE set to high */
-        set_gpio_val(GPIOX_bank_bit0_31(10), GPIOX_bit_bit0_31(10), 1);
-#endif /*CONFIG_BCM40183_WIFI*/
-}
-
-struct bt_dev_data bt_dev = {
-    .bt_dev_init    = bt_device_init,
-    .bt_dev_on      = bt_device_on,
-    .bt_dev_off     = bt_device_off,
-    .bt_dev_suspend = bt_device_suspend,
-    .bt_dev_resume  = bt_device_resume,
-};
-#endif
-
 #if defined(CONFIG_AML_WATCHDOG)
 static struct platform_device aml_wdt_device = {
     .name = "aml_wdt",
@@ -1391,13 +1168,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_SND_AML_M3)
     &aml_audio,
 #endif
-#ifdef CONFIG_SND_SOC_BT40183
-    &bt40183_audio,
-    &bt40183,    
-#endif
-#ifdef CONFIG_SND_AML_M3_CS4334
-    &aml_sound_card,
-#endif
 #if defined(CONFIG_CARDREADER)
     &amlogic_card_device,
 #endif
@@ -1415,12 +1185,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #endif
 #ifdef CONFIG_AM_NAND
     &aml_nand_device,
-#endif
-#if defined(CONFIG_NAND_FLASH_DRIVER_MULTIPLANE_CE)
-    &aml_nand_device,
-#endif
-#ifdef CONFIG_BT_DEVICE
- 	&bt_device,
 #endif
 #if defined(CONFIG_AML_RTC)
     &aml_rtc_device,
@@ -1523,11 +1287,6 @@ static void __init device_pinmux_init(void )
 		SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_3, (1<<24));
 //    set_audio_pinmux(AUDIO_OUT_TEST_N);
    // set_audio_pinmux(AUDIO_IN_JTAG);
-
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
-    aml_wifi_bcm4018x_init();
-#endif
-
 }
 
 static void __init  device_clk_setting(void)
