@@ -252,15 +252,12 @@ static set_vbus_valid_ext_fun(unsigned int id,char val)
 {
 	unsigned int  reg = (PREI_USB_PHY_A_REG1 + id);
 	if(val == 1)
-	{
 		SET_CBUS_REG_MASK(reg,1<<0);
-	}
 	else
-	{
 		CLEAR_CBUS_REG_MASK(reg,1<<0);
-	}
 }
 #endif
+
 static void set_usb_a_vbus_power(char is_power_on)
 {
 }
@@ -634,39 +631,6 @@ typedef struct {
 	unsigned enable;
 } gpio_data_t;
 
-#define MAX_GPIO 4
-static gpio_data_t gpio_data[MAX_GPIO] = {
-{"GPIOD6--HDMI", 	GPIOD_bank_bit0_9(6), 	GPIOD_bit_bit0_9(6), 	GPIO_OUTPUT_MODE, 1, 1},
-{"GPIOD9--VCC5V", GPIOD_bank_bit0_9(9), 	GPIOD_bit_bit0_9(9), 	GPIO_OUTPUT_MODE, 1, 1},
-{"GPIOX29--MUTE", 	GPIOX_bank_bit0_31(29), GPIOX_bit_bit0_31(29), GPIO_OUTPUT_MODE, 1, 1},
-{"GPIOC7--SATA", 	GPIOC_bank_bit0_15(7), GPIOC_bit_bit0_15(7), GPIO_OUTPUT_MODE, 1, 1},
-};	
-
-static void save_gpio(int port) 
-{
-	gpio_data[port].mode = get_gpio_mode(gpio_data[port].bank, gpio_data[port].bit);
-	if (gpio_data[port].mode==GPIO_OUTPUT_MODE)
-	{
-		if (gpio_data[port].enable){
-			printk("change %s output %d to input\n", gpio_data[port].name, gpio_data[port].value); 
-			gpio_data[port].value = get_gpio_val(gpio_data[port].bank, gpio_data[port].bit);
-			set_gpio_mode(gpio_data[port].bank, gpio_data[port].bit, GPIO_INPUT_MODE);
-		}
-		else{
-			printk("no change %s output %d\n", gpio_data[port].name, gpio_data[port].value); 
-		}
-	}
-}
-
-static void restore_gpio(int port)
-{
-	if ((gpio_data[port].mode==GPIO_OUTPUT_MODE)&&(gpio_data[port].enable))
-	{
-		set_gpio_val(gpio_data[port].bank, gpio_data[port].bit, gpio_data[port].value);
-		set_gpio_mode(gpio_data[port].bank, gpio_data[port].bit, GPIO_OUTPUT_MODE);
-		// printk("%s output %d\n", gpio_data[port].name, gpio_data[port].value); 
-	}
-}
 
 typedef struct {
 	char name[32];
@@ -705,47 +669,31 @@ static void restore_pinmux(void)
 
 static void set_vccx2(int power_on)
 {
-	int i;
-    if (power_on){
-
+	if (power_on){
+		printk(KERN_INFO "set_vcc power up\n");
 		restore_pinmux();
-		for (i=0;i<MAX_GPIO;i++)
-			restore_gpio(i);
-        printk(KERN_INFO "set_vcc power up\n");
-
-		#ifdef CONFIG_AML_SUSPEND
-       suspend_state=10;
-       #endif
-//        set_gpio_mode(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), GPIO_OUTPUT_MODE);
-//        set_gpio_val(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), 0);
-              
-    }
-    else{
-        printk(KERN_INFO "set_vcc power down\n");       			
-//        set_gpio_mode(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), GPIO_OUTPUT_MODE);
-//        set_gpio_val(GPIOA_bank_bit0_27(26), GPIOA_bit_bit0_27(26), 1);
+#ifdef CONFIG_AML_SUSPEND
+		suspend_state=10;
+#endif
+	} else {
+		printk(KERN_INFO "set_vcc power down\n");
 		save_pinmux();
-		for (i=0;i<MAX_GPIO;i++)
-			save_gpio(i);
-    }
+	}
 }
 
 extern void hdmi_wr_reg(unsigned long addr, unsigned long data);
 
 static void set_gpio_suspend_resume(int power_on)
 {
-    if(power_on)
-    	{
-    	printk("set gpio resume.\n");
-		 // HDMI
-        hdmi_wr_reg(0x8005, 2); 
-		 udelay(50);
-        hdmi_wr_reg(0x8005, 1); 
-    	}
-	else
-		{
-    	printk("set gpio suspend.\n");
-		}
+	if(power_on) {
+		printk("set gpio resume.\n");
+		// HDMI
+		hdmi_wr_reg(0x8005, 2); 
+		udelay(50);
+		hdmi_wr_reg(0x8005, 1); 
+	} else {
+		printk("set gpio suspend.\n");
+	}
 }
 
 static struct meson_pm_config aml_pm_pdata = {
@@ -829,19 +777,10 @@ static int get_charge_status(void)
 
 static void power_off(void)
 {
-    //Power hold down
-    //set_gpio_val(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), 0);
-    //set_gpio_mode(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), GPIO_OUTPUT_MODE);
 }
 
 static void set_bat_off(void)
 {
-    //BL_PWM power off
-    CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_2, (1<<31));
-    CLEAR_CBUS_REG_MASK(PWM_MISC_REG_AB, (1 << 0));
-    //set_gpio_val(GPIOA_bank_bit(7), GPIOA_bit_bit0_14(7), 0);
-    //set_gpio_mode(GPIOA_bank_bit(7), GPIOA_bit_bit0_14(7), GPIO_OUTPUT_MODE);
-
     //VCCx2 power down
 #if defined(CONFIG_SUSPEND)
     set_vccx2(0);
@@ -882,25 +821,26 @@ static struct aml_uart_platform aml_uart_plat = {
 };
 
 static struct platform_device aml_uart_device = {
-    .name         = "am_uart",  
-    .id       = -1, 
-    .num_resources    = 0,  
-    .resource     = NULL,   
-    .dev = {        
-                .platform_data = &aml_uart_plat,
-           },
+	.name		= "am_uart",
+	.id		= -1,
+	.num_resources	= 0,
+	.resource	= NULL,
+	.dev = {
+		.platform_data = &aml_uart_plat,
+	},
 };
 #endif
 
 #ifdef CONFIG_EFUSE
-static bool efuse_data_verify(unsigned char *usid)
-{  int len;
-  
-    len = strlen(usid);
-    if((len > 8)&&(len<31) )
-        return true;
-		else
-				return false;
+static bool efuse_data_verify(unsigned char *usid) {
+
+	int len;
+
+	len = strlen(usid);
+	if ( (len > 8)&&(len<31) )
+		return true;
+	else
+		return false;
 }
 
 static struct efuse_platform_data aml_efuse_plat = {
@@ -952,7 +892,7 @@ static struct platform_device vout2_device = {
 };
 #endif
 
- #ifdef CONFIG_POST_PROCESS_MANAGER
+#ifdef CONFIG_POST_PROCESS_MANAGER
 static struct resource ppmgr_resources[] = {
     [0] = {
         .start =  PPMGR_ADDR_START,
@@ -1318,19 +1258,6 @@ static void __init power_hold(void)
 		
     //VCCx2 power up
     printk(KERN_INFO "set_vccx2 power up\n");
-}
-
-static void __init LED_PWM_REG0_init(void)
-{
-	// PWM_C
-    printk(KERN_INFO "LED_PWM_REG0_init.\n");
-	SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_2,(1<<2));
-    WRITE_CBUS_REG(PWM_PWM_C, (0xff00<<16) |(0xff00<<0));
-    WRITE_CBUS_REG(PWM_MISC_REG_CD, (1<<0)	// enable
-									|(0<<4)	// PWM_A_CLK_SEL: 0:XTAL;  1:ddr_pll_clk;  2:clk81;  3:sys_pll_clk;
-									|(0x7f<<8)	// PWM_A_CLK_DIV
-									|(1<<15)	// PWM_A_CLK_EN
-	);
 }
 
 #ifdef CONFIG_AML_SUSPEND
