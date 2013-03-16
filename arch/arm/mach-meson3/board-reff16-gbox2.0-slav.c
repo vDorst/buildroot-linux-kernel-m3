@@ -58,11 +58,6 @@
 #include <linux/android_pmem.h>
 #endif
 
-#ifdef CONFIG_AMLOGIC_PM
-#include <linux/power_supply.h>
-#include <linux/aml_power.h>
-#endif
-
 #ifdef CONFIG_USB_ANDROID
 #include <linux/usb/android_composite.h>
 #endif
@@ -608,7 +603,6 @@ static  struct platform_device aml_rtc_device = {
 #endif
 
 #if defined(CONFIG_SUSPEND)
-
 typedef struct {
 	char name[32];
 	unsigned bank;
@@ -701,71 +695,6 @@ static struct platform_device aml_pm_device = {
         .platform_data  = &aml_pm_pdata,
     },
     .id             = -1,
-};
-#endif
-
-#ifdef CONFIG_AMLOGIC_PM
-
-static int is_ac_connected(void)
-{
-    return 1;
-}
-
-static void set_charge(int flags)
-{
-}
-
-#ifdef CONFIG_SARADC_AM
-extern int get_adc_sample(int chan);
-#endif
-static int get_bat_vol(void)
-{
-#ifdef CONFIG_SARADC_AM
-    return get_adc_sample(5);
-#else
-        return 0;
-#endif
-}
-
-static int get_charge_status(void)
-{
-    return 0;
-}
-
-static void power_off(void)
-{
-}
-
-static void set_bat_off(void)
-{
-    //VCCx2 power down
-#if defined(CONFIG_SUSPEND)
-    set_vccx2(0);
-#endif
-}
-
-static struct aml_power_pdata power_pdata = {
-	.is_ac_online	= is_ac_connected,
-	//.is_usb_online	= is_usb_connected,
-	// .set_charge = set_charge,
-	// .get_bat_vol = get_bat_vol,
-	.get_charge_status = get_charge_status,
-	.set_bat_off = set_bat_off,
-	//.bat_value_table = bat_value_table,
-	//.bat_charge_value_table = bat_charge_value_table,
-	//.bat_level_table = bat_level_table,
-	//.bat_table_len = 37,		
-	.is_support_usb_charging = 0,
-	//.supplied_to = supplicants,
-	//.num_supplicants = ARRAY_SIZE(supplicants),
-};
-
-static struct platform_device power_dev = {
-    .name       = "aml-power",
-    .id     = -1,
-    .dev = {
-        .platform_data  = &power_pdata,
-    },
 };
 #endif
 
@@ -983,41 +912,13 @@ static void meson_eth_reset(void)
 	gpio_set_value(GPIO_ETH_RESET, 1);
 }
 
-#define ETH_PM_DEV
-#if defined(ETH_PM_DEV)
-#define ETH_MODE_RMII_EXTERNAL
-static void meson_eth_clock_enable(int flag)
-{
-	printk("meson_eth_clock_enable: %x\n", (unsigned int)flag );
-}
-
-static struct aml_eth_platform_data aml_pm_eth_platform_data = {
-	.clock_enable = meson_eth_clock_enable,
-	.reset = meson_eth_reset,
-};
-
-struct platform_device meson_device_eth = {
-	.name = "ethernet_pm_driver",
-	.id = -1,
-	.dev = {
-		.platform_data = &aml_pm_eth_platform_data,
-	}
-};
-#endif
-
 static struct platform_device __initdata *platform_devs[] = {
-#if defined(ETH_PM_DEV)
-    &meson_device_eth,
-#endif
 #if defined(CONFIG_AML_HDMI_TX)
     &aml_hdmi_device,
 #endif
 #if defined(CONFIG_JPEGLOGO)
     &jpeglogo_device,
 #endif
-#if defined (CONFIG_AMLOGIC_PM)
-    &power_dev,
-#endif  
 #if defined(CONFIG_FB_AM)
     &fb_device,
 #endif
