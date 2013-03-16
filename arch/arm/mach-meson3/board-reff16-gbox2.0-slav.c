@@ -88,10 +88,10 @@ static int suspend_state=0;
     /* Don't have any to control. */
 // ETHERNET
 #define GPIO_ETH_RESET  GPIO_D(7)
-// POWERSUPPLIES
-
+// POWER
+#define GPIO_PWR_ENBLE  GPIO_D(9)
 // SOUND
-#define GPIO_SND_SPK_MUTE	  GPIO_C(4) // ( GPIOC_bank_bit0_15(4)   << 16 ) | GPIOC_bit_bit0_15(4)
+#define GPIO_SND_MUTE	GPIO_X(29)
 
 #if defined(CONFIG_JPEGLOGO)
 static struct resource jpeglogo_resources[] = {
@@ -130,7 +130,6 @@ static struct platform_device input_device = {
     .id = 0,
     .num_resources = ARRAY_SIZE(intput_resources),
     .resource = intput_resources,
-    
 };
 #endif
 
@@ -539,10 +538,10 @@ static struct resource aml_m3_audio_resource[] = {
 
 #if defined(CONFIG_SND_AML_M3)
 static struct platform_device aml_audio = {
-    .name               = "aml_m3_audio",
-    .id                     = -1,
-    .resource       =   aml_m3_audio_resource,
-    .num_resources  =   ARRAY_SIZE(aml_m3_audio_resource),
+    .name           = "aml_m3_audio",
+    .id             = -1,
+    .resource       = aml_m3_audio_resource,
+    .num_resources  = ARRAY_SIZE(aml_m3_audio_resource),
 };
 
 int aml_m3_is_hp_pluged(void)
@@ -552,13 +551,14 @@ int aml_m3_is_hp_pluged(void)
 
 void mute_spk(void* codec, int flag)
 {
+	/* Maybe we have one but resistor R65 is missing. */
 #ifdef _AML_M3_HW_DEBUG_
 	printk("***Entered %s:%s\n", __FILE__,__func__);
 #endif
-    if ( flag ) {
-		gpio_direction_output(GPIO_SND_SPK_MUTE, 1);
+	if (flag) {
+		gpio_direction_output(GPIO_SND_MUTE,0);
 	} else {
-		gpio_direction_output(GPIO_SND_SPK_MUTE, 0);
+		gpio_direction_output(GPIO_SND_MUTE,1);
 	}
 }
 
@@ -1180,51 +1180,15 @@ static void disable_unused_model(void)
 {
     CLK_GATE_OFF(VIDEO_IN);
     CLK_GATE_OFF(BT656_IN);
-  //  CLK_GATE_OFF(ETHERNET);
-//    CLK_GATE_OFF(SATA);
-//    CLK_GATE_OFF(WIFI);
-//    video_dac_disable();
  }
+
 static void __init power_hold(void)
 {
-    printk(KERN_INFO "power hold set high!\n");
-  //  set_gpio_val(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), 1);
-  //  set_gpio_mode(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), GPIO_OUTPUT_MODE);
-
-        // VCC5V
-        set_gpio_mode(GPIOD_bank_bit0_9(9), GPIOD_bit_bit0_9(9), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOD_bank_bit0_9(9), GPIOD_bit_bit0_9(9), 1);
-		 // hdmi power on
-        set_gpio_mode(GPIOD_bank_bit0_9(6), GPIOD_bit_bit0_9(6), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOD_bank_bit0_9(6), GPIOD_bit_bit0_9(6), 1);
-
-		// MUTE
-       set_gpio_mode(GPIOX_bank_bit0_31(29), GPIOX_bit_bit0_31(29), GPIO_OUTPUT_MODE);
-       set_gpio_val(GPIOX_bank_bit0_31(29), GPIOX_bit_bit0_31(29), 0);
-
-      // PC Link
-//       set_gpio_mode(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), GPIO_OUTPUT_MODE);
-//       set_gpio_val(GPIOC_bank_bit0_15(4), GPIOC_bit_bit0_15(4), 1);
-			 
-		// VCC, set to high when suspend 
-        set_gpio_mode(GPIOAO_bank_bit0_11(4), GPIOAO_bit_bit0_11(4), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOAO_bank_bit0_11(4), GPIOAO_bit_bit0_11(4), 0);
-        set_gpio_mode(GPIOAO_bank_bit0_11(5), GPIOAO_bit_bit0_11(5), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOAO_bank_bit0_11(5), GPIOAO_bit_bit0_11(5), 0);
-
-     // VCCK
-        set_gpio_mode(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOAO_bank_bit0_11(6), GPIOAO_bit_bit0_11(6), 1);
-	 // VCCIO
-        set_gpio_mode(GPIOAO_bank_bit0_11(2), GPIOAO_bit_bit0_11(2), GPIO_OUTPUT_MODE);
-        set_gpio_val(GPIOAO_bank_bit0_11(2), GPIOAO_bit_bit0_11(2), 1);
-
-    //init sata
-    set_gpio_mode(GPIOC_bank_bit0_15(7), GPIOC_bit_bit0_15(7), GPIO_OUTPUT_MODE);
-    set_gpio_val(GPIOC_bank_bit0_15(7), GPIOC_bit_bit0_15(7), 1);
-		
-    //VCCx2 power up
-    printk(KERN_INFO "set_vccx2 power up\n");
+	printk(KERN_INFO "power hold set high!\n");
+	// VCC5V, Not working because of R63 is missing.
+	gpio_direction_output(GPIO_POWER_EN, 1);
+	// MUTE, Not working because of R65 is missing.
+	mute_spk(NULL, 1);
 }
 
 #ifdef CONFIG_AML_SUSPEND
