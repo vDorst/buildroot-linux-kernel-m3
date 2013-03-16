@@ -717,82 +717,6 @@ static struct platform_device aml_pm_device = {
 };
 #endif
 
-#if defined(CONFIG_I2C_SW_AML)
-#define MESON3_I2C_PREG_GPIOX_OE     CBUS_REG_ADDR(PREG_PAD_GPIO4_EN_N)
-#define MESON3_I2C_PREG_GPIOX_OUTLVL CBUS_REG_ADDR(PREG_PAD_GPIO4_O)
-#define MESON3_I2C_PREG_GPIOX_INLVL  CBUS_REG_ADDR(PREG_PAD_GPIO4_I)
-
-static struct aml_sw_i2c_platform aml_sw_i2c_plat_A = {
-	.sw_pins = {
-		.scl_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.scl_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.scl_bit     = 26,
-		.scl_oe      = MESON3_I2C_PREG_GPIOX_OE,
-		.sda_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.sda_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.sda_bit     = 25,
-		.sda_oe      = MESON3_I2C_PREG_GPIOX_OE,
-	},
-	.udelay = 5,
-	.timeout = 100,
-};
-
-static struct aml_sw_i2c_platform aml_sw_i2c_plat_B = {
-	.sw_pins = {
-		.scl_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.scl_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.scl_bit     = 28,
-		.scl_oe      = MESON3_I2C_PREG_GPIOX_OE,
-		.sda_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.sda_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.sda_bit     = 27,
-		.sda_oe      = MESON3_I2C_PREG_GPIOX_OE,
-	},
-	.udelay = 5,
-	.timeout = 100,
-};
-
-static struct aml_sw_i2c_platform aml_sw_i2c_plat_C = {
-	.sw_pins = {
-		.scl_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.scl_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.scl_bit     = 29,
-		.scl_oe      = MESON3_I2C_PREG_GPIOX_OE,
-		.sda_reg_out = MESON3_I2C_PREG_GPIOX_OUTLVL,
-		.sda_reg_in  = MESON3_I2C_PREG_GPIOX_INLVL,
-		.sda_bit     = 30,
-		.sda_oe      = MESON3_I2C_PREG_GPIOX_OE,
-	},
-	.udelay = 5,
-	.timeout = 100,
-};
-
-static struct platform_device aml_sw_i2c_device_A = {
-    .name = "aml-sw-i2c",
-    .id = 0,
-    .dev = {
-        .platform_data = &aml_sw_i2c_plat_A,
-    },
-};
-
-static struct platform_device aml_sw_i2c_device_B = {
-    .name = "aml-sw-i2c",
-    .id = 1,
-    .dev = {
-        .platform_data = &aml_sw_i2c_plat_B,
-    },
-};
-
-static struct platform_device aml_sw_i2c_device_C = {
-    .name = "aml-sw-i2c",
-    .id = 2,
-    .dev = {
-        .platform_data = &aml_sw_i2c_plat_C,
-    },
-};
-
-#endif
-
 #ifdef CONFIG_AMLOGIC_PM
 
 static int is_ac_connected(void)
@@ -1147,11 +1071,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #endif
 #if defined(CONFIG_ANDROID_PMEM)
     &android_pmem_device,
-#endif
-#if defined(CONFIG_I2C_SW_AML)
-    &aml_sw_i2c_device_A,
-    &aml_sw_i2c_device_B,
-    &aml_sw_i2c_device_C,
 #endif
 #if defined(CONFIG_AM_UART_WITH_S_CORE)
     &aml_uart_device,
