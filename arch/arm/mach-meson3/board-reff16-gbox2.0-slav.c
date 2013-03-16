@@ -253,36 +253,36 @@ static void set_usb_a_vbus_power(char is_power_on)
 }
 
 static void set_usb_b_vbus_power(char is_power_on)
-{ 
+{
 }
 
 //usb_a is OTG port
 static struct lm_device usb_ld_a = {
-    .type = LM_DEVICE_TYPE_USB,
-    .id = 0,
-    .irq = INT_USB_A,
-    .resource.start = IO_USB_A_BASE,
-    .resource.end = -1,
-    .dma_mask_room = DMA_BIT_MASK(32),
-    .port_type = USB_PORT_TYPE_OTG,
-    .port_speed = USB_PORT_SPEED_DEFAULT,
-    .dma_config = USB_DMA_BURST_INCR16,
-    .set_vbus_power = set_usb_a_vbus_power,
+	.type = LM_DEVICE_TYPE_USB,
+	.id = 0,
+	.irq = INT_USB_A,
+	.resource.start = IO_USB_A_BASE,
+	.resource.end = -1,
+	.dma_mask_room = DMA_BIT_MASK(32),
+	.port_type = USB_PORT_TYPE_OTG,
+	.port_speed = USB_PORT_SPEED_DEFAULT,
+	.dma_config = USB_DMA_BURST_INCR16,
+	.set_vbus_power = set_usb_a_vbus_power,
 #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE	
 	.set_vbus_valid_ext = set_vbus_valid_ext_fun,
 #endif
 };
 static struct lm_device usb_ld_b = {
-    .type = LM_DEVICE_TYPE_USB,
-    .id = 1,
-    .irq = INT_USB_B,
-    .resource.start = IO_USB_B_BASE,
-    .resource.end = -1,
-    .dma_mask_room = DMA_BIT_MASK(32),
-    .port_type = USB_PORT_TYPE_HOST,
-    .port_speed = USB_PORT_SPEED_DEFAULT,
-    .dma_config = USB_DMA_BURST_INCR16, //   USB_DMA_DISABLE,
-    .set_vbus_power = set_usb_b_vbus_power,
+	.type = LM_DEVICE_TYPE_USB,
+	.id = 1,
+	.irq = INT_USB_B,
+	.resource.start = IO_USB_B_BASE,
+	.resource.end = -1,
+	.dma_mask_room = DMA_BIT_MASK(32),
+	.port_type = USB_PORT_TYPE_HOST,
+	.port_speed = USB_PORT_SPEED_DEFAULT,
+	.dma_config = USB_DMA_BURST_INCR16, //   USB_DMA_DISABLE,
+	.set_vbus_power = set_usb_b_vbus_power,
 #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE	
 	.set_vbus_valid_ext = set_vbus_valid_ext_fun,
 #endif	
@@ -293,20 +293,20 @@ static struct lm_device usb_ld_b = {
 #if defined(CONFIG_AM_STREAMING)
 static struct resource codec_resources[] = {
     [0] = {
-        .start =  CODEC_ADDR_START,
+        .start = CODEC_ADDR_START,
         .end   = CODEC_ADDR_END,
         .flags = IORESOURCE_MEM,
     },
     [1] = {
         .start = STREAMBUF_ADDR_START,
-	.end = STREAMBUF_ADDR_END,
+	.end   = STREAMBUF_ADDR_END,
 	.flags = IORESOURCE_MEM,
     },
 };
 
 static struct platform_device codec_device = {
-    .name       = "amstream",
-    .id         = 0,
+    .name          = "amstream",
+    .id            = 0,
     .num_resources = ARRAY_SIZE(codec_resources),
     .resource      = codec_resources,
 };
@@ -322,10 +322,10 @@ static struct resource deinterlace_resources[] = {
 };
 
 static struct platform_device deinterlace_device = {
-    .name       = "deinterlace",
-    .id         = 0,
-    .num_resources = ARRAY_SIZE(deinterlace_resources),
-    .resource      = deinterlace_resources,
+	.name          = "deinterlace",
+	.id            = 0,
+	.num_resources = ARRAY_SIZE(deinterlace_resources),
+	.resource      = deinterlace_resources,
 };
 #endif
 
@@ -999,7 +999,7 @@ static __init void m1_init_machine(void)
 	set_usb_phy_clk(USB_PHY_CLOCK_SEL_XTAL_DIV2);
 //	set_usb_phy_id_mode(USB_PHY_PORT_A, USB_PHY_MODE_SW_HOST);
 	lm_device_register(&usb_ld_a);
- 	set_usb_phy_id_mode(USB_PHY_PORT_B,USB_PHY_MODE_SW_HOST);
+ 	set_usb_phy_id_mode(USB_PHY_PORT_B, USB_PHY_MODE_SW_HOST);
 	lm_device_register(&usb_ld_b);
 #endif
 	disable_unused_model();
