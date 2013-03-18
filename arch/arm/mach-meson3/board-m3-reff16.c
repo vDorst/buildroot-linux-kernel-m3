@@ -79,13 +79,8 @@
 static int suspend_state=0;
 #endif
 
-/* GPIO Defines */
-// ETHERNET
-#define GPIO_ETH_RESET  GPIO_D(7)
-// BUTTONS
-#define GPIO_KEY_POWER  ( GPIOAO_bank_bit0_11(3)  << 16 ) | GPIOAO_bit_bit0_11(3)
-// SOUND
-#define GPIO_SND_MUTE  GPIO_X(29)
+/* Board Defines File */
+#include "board-defines.h"
 
 #if defined(CONFIG_JPEGLOGO)
 static struct resource jpeglogo_resources[] = {
@@ -321,7 +316,7 @@ static struct lm_device usb_ld_a = {
     .port_speed = USB_PORT_SPEED_DEFAULT,
     .dma_config = USB_DMA_BURST_INCR16,
     .set_vbus_power = set_usb_a_vbus_power,
-    #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE	
+    #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE
 	.set_vbus_valid_ext = set_vbus_valid_ext_fun,
     #endif
 };
@@ -337,7 +332,7 @@ static struct lm_device usb_ld_b = {
     .port_speed = USB_PORT_SPEED_DEFAULT,
     .dma_config = USB_DMA_BURST_INCR16, //   USB_DMA_DISABLE,
     .set_vbus_power = set_usb_b_vbus_power,
-    #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE	
+    #ifdef CONFIG_USB_DPLINE_PULLUP_DISABLE
 	.set_vbus_valid_ext = set_vbus_valid_ext_fun,
     #endif	
 };
@@ -581,6 +576,7 @@ int aml_m3_is_hp_pluged(void)
 
 void mute_spk(void* codec, int flag)
 {
+#ifdef CONFIG_SND_HAS_ANALOG
 #ifdef _AML_M3_HW_DEBUG_
 	printk("***Entered %s:%s\n", __FILE__,__func__);
 #endif
@@ -589,6 +585,7 @@ void mute_spk(void* codec, int flag)
 	} else {
 	gpio_direction_output(GPIO_SND_MUTE,0);
 	}
+#endif
 }
 
 #define APB_BASE 0x4000
