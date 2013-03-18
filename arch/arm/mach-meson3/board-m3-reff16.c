@@ -1463,13 +1463,6 @@ static struct platform_device aml_hdmi_device = {
     }
 };
 #endif
-#define ETH_PM_DEV
-#if defined(ETH_PM_DEV)
-#define ETH_MODE_RMII_EXTERNAL
-static void meson_eth_clock_enable(int flag)
-{
-printk("meson_eth_clock_enable: %x\n", (unsigned int)flag );
-}
 
 static void meson_eth_reset(void)
 {
@@ -1478,6 +1471,14 @@ static void meson_eth_reset(void)
     gpio_direction_output(GPIO_ETH_RESET, 0);
     mdelay(100);
     gpio_set_value(GPIO_ETH_RESET, 1); 
+}
+
+#define ETH_PM_DEV
+#if defined(ETH_PM_DEV)
+#define ETH_MODE_RMII_EXTERNAL
+static void meson_eth_clock_enable(int flag)
+{
+printk("meson_eth_clock_enable: %x\n", (unsigned int)flag );
 }
 
 static struct aml_eth_platform_data  aml_pm_eth_platform_data ={
@@ -1506,7 +1507,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined (CONFIG_AMLOGIC_PM)
     &power_dev,
 #endif  
-
 #if defined(CONFIG_FB_AM)
     &fb_device,
 #endif
@@ -1617,26 +1617,27 @@ static int __init aml_i2c_init(void)
 static void __init eth_pinmux_init(void)
 {
 	
-   CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_6,(3<<17));//reg6[17/18]=0
-   #ifdef NET_EXT_CLK
-       eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
-   #else
-       eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_OUT_GPIOY0_REG6_17, 0);
-   #endif
-	
-   CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);           // Disable the Ethernet clocks
+	CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_6,(3<<17));//reg6[17/18]=0
+#ifdef NET_EXT_CLK
+	eth_clk_set(ETH_CLKSRC_EXT_XTAL_CLK, (50 * CLK_1M), (50 * CLK_1M), 1);
+	eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_IN_GPIOY0_REG6_18, 0);
+#else
+	eth_clk_set(ETH_CLKSRC_MISC_CLK, get_misc_pll_clk(), (50 * CLK_1M), 0);
+	eth_set_pinmux(ETH_BANK0_GPIOY1_Y9, ETH_CLK_OUT_GPIOY0_REG6_17, 0);
+#endif
+	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);           // Disable the Ethernet clocks
 	// ---------------------------------------------
 	// Test 50Mhz Input Divide by 2
 	// ---------------------------------------------
 	// Select divide by 2
-    CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<3));     // desc endianess "same order" 
-    CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<2));     // ata endianess "little"
-    SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1 << 1));     // divide by 2 for 100M
-    SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);            // enable Ethernet clocks
-    udelay(100);
+	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<3));     // desc endianess "same order" 
+	CLEAR_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1<<2));     // ata endianess "little"
+	SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, (1 << 1));     // divide by 2 for 100M
+	SET_CBUS_REG_MASK(PREG_ETHERNET_ADDR0, 1);            // enable Ethernet clocks
+	udelay(100);
 
-    // ethernet reset
-    meson_eth_reset();
+	// ethernet reset
+	meson_eth_reset();
 }
 
 static void __init device_pinmux_init(void )
@@ -1758,19 +1759,6 @@ static void __init device_pinmux_init(void )
 #endif
 }
 
-static void __init  device_clk_setting(void)
-{
-    /*Demod CLK for eth and sata*/
-    //demod_apll_setting(0,1200*CLK_1M);
-    /*eth clk*/
-    #ifdef NET_EXT_CLK
-		eth_clk_set(7, (50 * CLK_1M), (50 * CLK_1M), 1);
-	#else    
-    	eth_clk_set(ETH_CLKSRC_MISC_CLK, get_misc_pll_clk(), (50 * CLK_1M), 0);
-    #endif
-    //eth_clk_set(1, get_system_clk(), (50 * CLK_1M), 0);
-}
-
 static void disable_unused_model(void)
 {
     CLK_GATE_OFF(VIDEO_IN);
@@ -1835,7 +1823,6 @@ static __init void m1_init_machine(void)
     
     power_hold();
 //    pm_power_off = power_off;		//Elvis fool
-    device_clk_setting();
     device_pinmux_init();
 //    LED_PWM_REG0_init();
 
