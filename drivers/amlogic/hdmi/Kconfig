@@ -15,4 +15,12 @@ config AML_HDMI_TX_HDCP
         help  
                 hdmitx hdcp enable,It should be enalbe if board have hdmitx hdcp key
 endif        
+
+config AML_HDMI_TX_CEC
+        tristate "HDMITX CEC enable"
+        default n
+        help  
+                hdmitx cec enable
+endif        
+
 endmenu

@@ -4,8 +4,33 @@ menu "Amlogic Audio Interface"
 
 config	AMAUDIO
 	tristate "Amlogic Audio Interface"
-    default y
+	default y
+	help
+		"AMLogic Audio Interface"
+
+config  AMAUDIO_INTERNAL_ANALOG_AUDIO
+	tristate "Internal Analog Audio Driver"
+	default y
+	help
+		"AMLogic Audio Interface"
+
+config  AMAUDIO_HWMUTE_CONTROL
+	tristate "Internal Analog Audio Driver"
+	default y
+	help
+		"AMLogic Audio Interface"
+
+config  AMAUDIO_HWHEADPHONE_DETECT
+	tristate "Internal Analog Audio Driver"
+	default y
+	help
+		"AMLogic Audio Interface"
+
+config  AMAUDIO_INTERNAL_SPDIF
+	tristate "Internal SPDIF Audio Driver"
+	default y
 	help
 		"AMLogic Audio Interface"
 	
 endmenu	
+
