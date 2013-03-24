@@ -43,7 +43,7 @@
 #include <mach/am_regs.h>
 #include <linux/aml_eth.h>
 
-#ifdef CONFIG_AM_UART_WITH_S_CORE 
+#ifdef CONFIG_AM_UART_WITH_S_CORE
 #include <linux/uart-aml.h>
 #endif
 #include <mach/card_io.h>
@@ -77,17 +77,17 @@
 
 /* GPIO Defines */
 // LEDS
-#define GPIO_LED_STATUS GPIO_AO(10) // ( GPIOAO_bank_bit0_11(10) << 16 ) | GPIOAO_bit_bit0_11(10)
-#define GPIO_LED_POWER  GPIO_AO(11) // ( GPIOAO_bank_bit0_11(11) << 16 ) | GPIOAO_bit_bit0_11(11)
+#define GPIO_LED_STATUS GPIO_AO(10)
+#define GPIO_LED_POWER  GPIO_AO(11)
 // ETHERNET
-#define GPIO_ETH_RESET  GPIO_D(7)   // ( GPIOD_bank_bit0_9(7)    << 16 ) | GPIOD_bit_bit0_9(7)
+#define GPIO_ETH_RESET  GPIO_D(7)
 // BUTTONS
-#define GPIO_KEY_POWER  GPIO_AO(3)  // ( GPIOAO_bank_bit0_11(3)  << 16 ) | GPIOAO_bit_bit0_11(3)
+#define GPIO_KEY_POWER  GPIO_AO(3)
 // POWERSUPPLIES
-#define GPIO_PWR_USB_B  GPIO_C(5)   // ( GPIOC_bank_bit0_15(5)   << 16 ) | GPIOC_bit_bit0_15(5)
-#define GPIO_PWR_VCCIO  GPIO_AO(2)  // ( GPIOAO_bank_bit0_11(2)  << 16 ) | GPIOAO_bit_bit0_11(2)
-#define GPIO_PWR_VCCK   GPIO_AO(6)  // ( GPIOAO_bank_bit0_11(6)  << 16 ) | GPIOAO_bit_bit0_11(6)
-#define GPIO_PWR_HDMI   GPIO_D(6)   // ( GPIOD_bank_bit0_9(6)    << 16 ) | GPIOD_bit_bit0_9(6)
+#define GPIO_PWR_USB_B  GPIO_C(5)
+#define GPIO_PWR_VCCIO  GPIO_AO(2)
+#define GPIO_PWR_VCCx2  GPIO_AO(6)
+#define GPIO_PWR_HDMI   GPIO_D(6)
 
 #if defined(CONFIG_LEDS_GPIO)
 /* LED Class Support for the leds */
@@ -95,7 +95,7 @@ static struct gpio_led aml_led_pins[] = {
 	{
 		.name		 = "Powerled",
 		.default_trigger = "default-on",
-		.gpio		 = GPIO_LED_POWER, // GPIOAO11
+		.gpio		 = GPIO_LED_POWER,
 		.active_low	 = 0,
 	},
 	{
@@ -105,7 +105,7 @@ static struct gpio_led aml_led_pins[] = {
 #else
 		.default_trigger = "none",
 #endif
-		.gpio		 = GPIO_LED_STATUS, // GPIOAO10
+		.gpio		 = GPIO_LED_STATUS,
 		.active_low	 = 1,
 	},
 };
@@ -444,7 +444,7 @@ static struct lm_device usb_ld_b = {
     .dma_mask_room = DMA_BIT_MASK(32),
     .port_type = USB_PORT_TYPE_HOST,
     .port_speed = USB_PORT_SPEED_DEFAULT,
-    .dma_config = USB_DMA_BURST_SINGLE , //   USB_DMA_DISABLE,
+    .dma_config = USB_DMA_BURST_SINGLE,
     .set_vbus_power = set_usb_b_vbus_power,
 };
 
@@ -1218,11 +1218,11 @@ static void __init power_hold(void)
 	printk(KERN_INFO "power hold set high!\n");
 
 	printk(KERN_INFO "set_vccio and set_vcck power up\n");
-	// VCCIO +2V5 GPIO AO2, ACTIVE HIGH
+	// VCCIO +3V3 GPIO AO2, ACTIVE HIGH
 	gpio_direction_output( GPIO_PWR_VCCIO, 1);
 
-	// VCCK +5V GPIO AO6, ACTIVE HIGH.
-	gpio_direction_output( GPIO_PWR_VCCK, 1);
+	// VCCx2 +5V GPIO AO6, ACTIVE HIGH.
+	gpio_direction_output( GPIO_PWR_VCCx2, 1);
 
 	printk(KERN_INFO "set_hdmi power up\n");
 	// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
