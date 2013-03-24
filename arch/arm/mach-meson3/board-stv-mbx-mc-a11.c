@@ -59,15 +59,6 @@
 #include <linux/android_pmem.h>
 #endif
 
-#ifdef CONFIG_AMLOGIC_PM
-#include <linux/power_supply.h>
-#include <linux/aml_power.h>
-#endif
-
-#ifdef CONFIG_USB_ANDROID
-#include <linux/usb/android_composite.h>
-#endif
-
 #ifdef CONFIG_SUSPEND
 #include <mach/pm.h>
 #endif
@@ -83,7 +74,6 @@
 #if defined(CONFIG_LEDS_GPIO)
 #include <linux/leds.h>
 #endif
-
 
 /* GPIO Defines */
 // LEDS
