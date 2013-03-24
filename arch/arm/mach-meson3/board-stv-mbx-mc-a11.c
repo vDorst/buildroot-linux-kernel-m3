@@ -80,6 +80,11 @@
 #include <linux/hdmi/hdmi_config.h>
 #endif
 
+#if defined(CONFIG_LEDS_GPIO)
+#include <linux/leds.h>
+#endif
+
+
 /* GPIO Defines */
 // LEDS
 #define GPIO_LED_STATUS GPIO_AO(10) // ( GPIOAO_bank_bit0_11(10) << 16 ) | GPIOAO_bit_bit0_11(10)
