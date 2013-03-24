@@ -619,46 +619,6 @@ static  struct platform_device aml_rtc_device = {
 #if defined(CONFIG_SUSPEND)
 typedef struct {
 	char name[32];
-	unsigned bank;
-	unsigned bit;
-	gpio_mode_t mode;
-	unsigned value;
-	unsigned enable;
-} gpio_data_t;
-
-#define MAX_GPIO 1
-static gpio_data_t gpio_data[MAX_GPIO] = {
-	{"GPIOD6--HDMI",  GPIOD_bank_bit0_9(6), GPIOD_bit_bit0_9(6), GPIO_OUTPUT_MODE, 1, 1},
-};
-
-static void save_gpio(int port) 
-{
-	gpio_data[port].mode = get_gpio_mode(gpio_data[port].bank, gpio_data[port].bit);
-	if (gpio_data[port].mode==GPIO_OUTPUT_MODE)
-	{
-		if (gpio_data[port].enable){
-			printk("change %s output %d to input\n", gpio_data[port].name, gpio_data[port].value); 
-			gpio_data[port].value = get_gpio_val(gpio_data[port].bank, gpio_data[port].bit);
-			set_gpio_mode(gpio_data[port].bank, gpio_data[port].bit, GPIO_INPUT_MODE);
-		}
-		else{
-			printk("no change %s output %d\n", gpio_data[port].name, gpio_data[port].value); 
-		}
-	}
-}
-
-static void restore_gpio(int port)
-{
-	if ((gpio_data[port].mode==GPIO_OUTPUT_MODE)&&(gpio_data[port].enable))
-	{
-		set_gpio_val(gpio_data[port].bank, gpio_data[port].bit, gpio_data[port].value);
-		set_gpio_mode(gpio_data[port].bank, gpio_data[port].bit, GPIO_OUTPUT_MODE);
-		// printk("%s output %d\n", gpio_data[port].name, gpio_data[port].value); 
-	}
-}
-
-typedef struct {
-	char name[32];
 	unsigned reg;
 	unsigned bits;
 	unsigned enable;
@@ -693,11 +653,8 @@ static void restore_pinmux(void)
 
 static void set_vccx2(int power_on)
 {
-	int i;
 	if (power_on) {
 		restore_pinmux();
-		for (i=0;i<MAX_GPIO;i++)
-			restore_gpio(i);
 		printk(KERN_INFO "set_vcc power up\n");
 #ifdef CONFIG_AML_SUSPEND
 		suspend_state=5;
@@ -706,15 +663,11 @@ static void set_vccx2(int power_on)
 		
 		// VCCx2 +5V -- GPIO AO6, ACTIVE HIGH.
 		gpio_direction_output( GPIO_PWR_VCCx2, 1);
-
 		// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
 		gpio_direction_output( GPIO_PWR_HDMI, 1);
-
 	} else {
 		printk(KERN_INFO "set_vcc power down\n");
 		save_pinmux();
-		for (i=0;i<MAX_GPIO;i++)
-			save_gpio(i);
 		/* vDorst: Idea to try to enable vccio and vcck here. */
 
 		// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
