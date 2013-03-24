@@ -703,12 +703,24 @@ static void set_vccx2(int power_on)
 		suspend_state=5;
 #endif
 		/* vDorst: Idea to try to enable vccio and vcck here. */
+		
+		// VCCx2 +5V -- GPIO AO6, ACTIVE HIGH.
+		gpio_direction_output( GPIO_PWR_VCCx2, 1);
+
+		// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
+		gpio_direction_output( GPIO_PWR_HDMI, 1);
+
 	} else {
 		printk(KERN_INFO "set_vcc power down\n");
 		save_pinmux();
 		for (i=0;i<MAX_GPIO;i++)
 			save_gpio(i);
 		/* vDorst: Idea to try to enable vccio and vcck here. */
+
+		// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
+		gpio_direction_output( GPIO_PWR_HDMI, 0);
+		// VCCx2 +5V -- GPIO AO6, ACTIVE HIGH.
+		gpio_direction_output( GPIO_PWR_VCCx2, 0);
 	}
 }
 
@@ -1217,11 +1229,11 @@ static void __init power_hold(void)
 {
 	printk(KERN_INFO "power hold set high!\n");
 
-	printk(KERN_INFO "set_vccio and set_vcck power up\n");
-	// VCCIO +3V3 GPIO AO2, ACTIVE HIGH
+	printk(KERN_INFO "set_vccio and set_vccx2 power up\n");
+	// VCCIO +3V3 -- GPIO AO2, ACTIVE HIGH
 	gpio_direction_output( GPIO_PWR_VCCIO, 1);
 
-	// VCCx2 +5V GPIO AO6, ACTIVE HIGH.
+	// VCCx2 +5V -- GPIO AO6, ACTIVE HIGH.
 	gpio_direction_output( GPIO_PWR_VCCx2, 1);
 
 	printk(KERN_INFO "set_hdmi power up\n");
