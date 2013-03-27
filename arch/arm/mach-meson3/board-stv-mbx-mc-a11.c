@@ -1198,6 +1198,9 @@ static void __init power_hold(void)
 	printk(KERN_INFO "set_hdmi power up\n");
 	// HDMI Power +5V -- GPIO D6, ACTIVE HIGH
 	gpio_direction_output( GPIO_PWR_HDMI, 1);
+
+	// Turn On Wifi Power. So the wifi-module can be detected.
+	extern_usb_wifi_power(1);
 }
 
 static void device_hardware_id_init(void) {
