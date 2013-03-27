@@ -406,19 +406,25 @@ static struct platform_device amlogic_spi_nor_device = {
 #endif
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
+/* usb wifi power 1:power on  0:power off */
+void extern_usb_wifi_power(int is_power_on)
+{
+	printk(KERN_INFO "usb_wifi_power %s\n", is_power_on ? "On" : "Off");
+	/* USB +3v3 Power Enable internal port, GPIO C5, ACTIVE LOW */
+        if(is_power_on) {
+		gpio_direction_output(GPIO_PWR_USB_B, 0);
+	} else {
+		gpio_direction_output(GPIO_PWR_USB_B, 1);
+	}
+}
+
+EXPORT_SYMBOL(extern_usb_wifi_power);
+
 static void set_usb_a_vbus_power(char is_power_on)
 {
 }
 
 static void set_usb_b_vbus_power(char is_power_on) {
-    /* USB +3v3 Power Enable internal port, GPIO C5, ACTIVE LOW */
-    if(is_power_on) {
-        printk(KERN_INFO "set usb b port power on.\n");
-	gpio_direction_output(GPIO_PWR_USB_B, 0);
-    } else {
-        printk(KERN_INFO "set usb b port power off.!\n");
-	gpio_direction_output(GPIO_PWR_USB_B, 1);
-    }
 }
 
 //usb_a is OTG port
@@ -1228,6 +1234,7 @@ static __init void m1_init_machine(void)
 	set_usb_phy_id_mode(USB_PHY_PORT_B, USB_PHY_MODE_SW_HOST);
 	lm_device_register(&usb_ld_b);
 #endif
+	printk("CLOCK_TICK_RATE: %d\n", CLOCK_TICK_RATE);
 	disable_unused_model();
 }
 
