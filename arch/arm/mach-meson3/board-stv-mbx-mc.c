@@ -95,6 +95,50 @@
 #include <linux/hdmi/hdmi_config.h>
 #endif
 
+#if defined(CONFIG_LEDS_GPIO)
+#include <linux/leds.h>
+#endif
+
+/* GPIO Defines */
+// LEDS
+#define GPIO_LED_POWER GPIO_AO(10)
+#define GPIO_LED_STATUS GPIO_AO(11)
+
+#if defined(CONFIG_LEDS_GPIO)
+/* LED Class Support for the leds */
+static struct gpio_led aml_led_pins[] = {
+	{
+		.name		 = "Powerled",
+		.default_trigger = "default-on",
+		.gpio		 = GPIO_LED_POWER,
+		.active_low	 = 1,
+	},
+	{
+		.name		 = "Statusled",
+#if defined(CONFIG_LEDS_TRIGGER_REMOTE_CONTROL)
+		.default_trigger = "rc",
+#else
+		.default_trigger = "none",
+#endif
+		.gpio		 = GPIO_LED_STATUS,
+		.active_low	 = 0,
+	},
+};
+
+static struct gpio_led_platform_data aml_led_data = {
+	.leds	  = aml_led_pins,
+	.num_leds = ARRAY_SIZE(aml_led_pins),
+};
+
+static struct platform_device aml_leds = {
+	.name	= "leds-gpio",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &aml_led_data,
+	}
+};
+#endif
+
 #if defined(CONFIG_AML_HDMI_TX)
 static struct hdmi_phy_set_data brd_phy_data[] = {
 //    {27, 0xf7, 0x0},    // an example: set Reg0xf7 to 0 in 27MHz
@@ -1248,7 +1292,6 @@ static struct platform_device aml_efuse_device = {
 
 #ifdef CONFIG_AM_NAND
 
-
 static struct mtd_partition multi_partition_info[] = 
 { // 2G
 #ifndef CONFIG_AMLOGIC_SPI_NOR
@@ -1314,6 +1357,75 @@ static struct mtd_partition multi_partition_info[] =
 
 };
 
+static struct mtd_partition multi_partition_info_4G_or_More[] =
+{ // 4G
+#ifndef CONFIG_AMLOGIC_SPI_NOR
+/* Hide uboot partition
+	{
+		.name = "uboot",
+		.offset = 0,
+		.size = 4*1024*1024,
+	},
+//*/
+    {
+        .name = "ubootenv",
+        .offset = 4*1024*1024,
+        .size = 0x2000,
+    },
+/* Hide recovery partition
+    {
+        .name = "recovery",
+        .offset = 6*1024*1024,
+        .size = 2*1024*1024,
+    },
+//*/
+#endif
+	{//4M for logo
+		.name = "logo",
+		.offset = 0*1024*1024,
+		.size = 6*1024*1024,
+	},
+	{//8M for kernel
+		.name = "boot",
+		.offset = (0+6)*1024*1024,
+		.size = 10*1024*1024,
+	},
+	{//512M for android system.
+	    .name = "system",
+	    .offset = (0+6+10)*1024*1024,
+	    .size = 512*1024*1024,
+	},
+	{//300M for cache
+	    .name = "cache",
+	    .offset = (0+6+10+512)*1024*1024,
+	    .size = 300*1024*1024,
+	},
+
+#ifdef CONFIG_AML_NFTL
+	{//1G for NFTL_part
+	    .name = "NFTL_Part",
+	    .offset=(0+6+10+512+300)*1024*1024,
+	    .size=1024*1024*1024,
+	},
+	{//200M for backup
+	    .name = "backup",
+	    .offset = (0+6+10+512+300+1024)*1024*1024,
+	    .size = 200*1024*1024,
+	},
+	{//other for user data
+	.name = "userdata",
+	.offset = MTDPART_OFS_APPEND,
+	.size = MTDPART_SIZ_FULL,
+	},
+#else
+    {
+        .name = "userdata",
+        .offset=MTDPART_OFS_APPEND,
+        .size=MTDPART_SIZ_FULL,
+    },
+#endif
+};
+
 static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
 {
     printk("set nand parts for chip %lldMB\n", (size/(1024*1024)));
@@ -1321,6 +1433,10 @@ static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
     if (size/(1024*1024) == (1024*2)) {
         chip->partitions = multi_partition_info;
         chip->nr_partitions = ARRAY_SIZE(multi_partition_info);
+        }
+    else if (size/(1024*1024) >= (1024*4)) {
+        chip->partitions = multi_partition_info_4G_or_More;
+        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_4G_or_More);
         }
     else {
         // Undefined
@@ -1387,6 +1503,7 @@ static struct platform_device aml_nand_device = {
     },
 };
 #endif
+
 #if  defined(CONFIG_AM_TV_OUTPUT)||defined(CONFIG_AM_TCON_OUTPUT)
 static struct resource vout_device_resources[] = {
     [0] = {
@@ -1771,6 +1888,9 @@ static struct platform_device aml_wdt_device = {
 
 
 static struct platform_device __initdata *platform_devs[] = {
+#if defined(CONFIG_LEDS_GPIO)
+    &aml_leds,
+#endif
 #if defined(CONFIG_JPEGLOGO)
     &jpeglogo_device,
 #endif
