@@ -203,6 +203,12 @@ config MACH_MESON3_REFF16_GBOX_SLAV
         help
           Support for G-Box Slav, based on a G-Box 2.0 hardware.
 
+config MACH_MESON3_REFF16_DONGLE_HD18M
+	select GENERIC_ALLOCATOR
+	bool "Support M3 (HD18M) MBX platform"
+	help
+	  Include for HD18M, based on a Ref M3 Dongle board platform.
+
 config STV_RECOVERY
 	bool "make recovery partition visible"
 	default n
