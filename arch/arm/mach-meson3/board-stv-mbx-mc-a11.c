@@ -77,8 +77,8 @@
 
 /* GPIO Defines */
 // LEDS
-#define GPIO_LED_STATUS GPIO_AO(10)
-#define GPIO_LED_POWER  GPIO_AO(11)
+#define GPIO_LED_POWER  GPIO_AO(10)
+#define GPIO_LED_STATUS GPIO_AO(11)
 // ETHERNET
 #define GPIO_ETH_RESET  GPIO_D(7)
 // BUTTONS
@@ -96,7 +96,7 @@ static struct gpio_led aml_led_pins[] = {
 		.name		 = "Powerled",
 		.default_trigger = "default-on",
 		.gpio		 = GPIO_LED_POWER,
-		.active_low	 = 0,
+		.active_low	 = 1,
 	},
 	{
 		.name		 = "Statusled",
@@ -106,7 +106,7 @@ static struct gpio_led aml_led_pins[] = {
 		.default_trigger = "none",
 #endif
 		.gpio		 = GPIO_LED_STATUS,
-		.active_low	 = 1,
+		.active_low	 = 0,
 	},
 };
 
