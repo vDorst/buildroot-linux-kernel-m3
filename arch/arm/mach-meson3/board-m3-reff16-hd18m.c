@@ -51,29 +51,19 @@
 #include <mach/clk_set.h>
 #include "board-m3-reff16.h"
 
-
 #ifdef CONFIG_ANDROID_PMEM
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
 #include <linux/android_pmem.h>
 #endif
 
-
 #ifdef CONFIG_AMLOGIC_PM
 #include <linux/power_supply.h>
 #include <linux/aml_power.h>
 #endif
 
-#ifdef CONFIG_USB_ANDROID
-#include <linux/usb/android_composite.h>
-#endif
-
 #ifdef CONFIG_SUSPEND
 #include <mach/pm.h>
-#endif
-
-#ifdef CONFIG_VIDEO_AMLOGIC_CAPTURE
-#include <media/amlogic/aml_camera.h>
 #endif
 
 #ifdef CONFIG_EFUSE
@@ -169,58 +159,6 @@ static struct platform_device adc_kp_device = {
 };
 #endif
 
-#if defined(CONFIG_KEY_INPUT_CUSTOM_AM) || defined(CONFIG_KEY_INPUT_CUSTOM_AM_MODULE)
-#include <linux/input.h>
-#include <linux/input/key_input.h>
-
-int _key_code_list[] = {KEY_POWER};
-
-static inline int key_input_init_func(void)
-{
-        set_gpio_mode(GPIOAO_bank_bit0_11(3), GPIOAO_bit_bit0_11(3), GPIO_INPUT_MODE);
-//    WRITE_AOBUS_REG(AO_RTC_ADDR0, (READ_AOBUS_REG(AO_RTC_ADDR0) &~(1<<11)));
-//    WRITE_AOBUS_REG(AO_RTC_ADDR1, (READ_AOBUS_REG(AO_RTC_ADDR1) &~(1<<3)));
-    return 0;
-}
-static inline int key_scan(int *key_state_list)
-{
-    int ret = 0;
-	 // GPIOAO_3
-	 #ifdef CONFIG_SUSPEND
-	 if(suspend_state)
-	 	{
-	 	// forse power key down
-	 	suspend_state--;
-	 	key_state_list[0] = 1;
-	 	}
-	 else
-	 #endif
-    key_state_list[0] = get_gpio_val(GPIOAO_bank_bit0_11(3), GPIOAO_bit_bit0_11(3))?0:1;
-//    key_state_list[0] = ((READ_AOBUS_REG(AO_RTC_ADDR1) >> 2) & 1) ? 0 : 1;
-    return ret;
-}
-
-static  struct key_input_platform_data  key_input_pdata = {
-    .scan_period = 20,
-    .fuzz_time = 60,
-    .key_code_list = &_key_code_list[0],
-    .key_num = ARRAY_SIZE(_key_code_list),
-.scan_func = key_scan,
-    .init_func = key_input_init_func,
-    .config =  2, 	// 0: interrupt;    	2: polling;
-};
-
-static struct platform_device input_device_key = {
-    .name = "m1-keyinput",
-    .id = 0,
-    .num_resources = 0,
-    .resource = NULL,
-    .dev = {
-        .platform_data = &key_input_pdata,
-    }
-};
-#endif
-
 #if defined(CONFIG_AM_IR_RECEIVER)
 #include <linux/input/irreceiver.h>
 
@@ -290,58 +228,6 @@ static struct platform_device fb_device = {
     .id         = 0,
     .num_resources = ARRAY_SIZE(fb_device_resources),
     .resource      = fb_device_resources,
-};
-#endif
-
-#if defined(CONFIG_AMLOGIC_SPI_NOR)
-static struct mtd_partition spi_partition_info[] = {
-    /* Hide uboot partition
-            {
-                    .name = "uboot",
-                    .offset = 0,
-                    .size = 0x3e000,
-            },
-    //*/
-    {
-        .name = "ubootenv",
-        .offset = 0x80000,
-        .size = 0x2000,
-},
-    {
-	.name = "hashtable",
-	.offset = 0x100000,
-	.size = 0x2000,
-    },
-    /* Hide recovery partition
-            {
-                    .name = "recovery",
-                    .offset = 0x40000,
-                    .size = 0x1c0000,
-            },
-    //*/
-};
-
-static struct flash_platform_data amlogic_spi_platform = {
-    .parts = spi_partition_info,
-    .nr_parts = ARRAY_SIZE(spi_partition_info),
-};
-
-static struct resource amlogic_spi_nor_resources[] = {
-    {
-        .start = 0xc1800000,
-        .end = 0xc1ffffff,
-        .flags = IORESOURCE_MEM,
-    },
-};
-
-static struct platform_device amlogic_spi_nor_device = {
-    .name = "AMLOGIC_SPI_NOR",
-    .id = -1,
-    .num_resources = ARRAY_SIZE(amlogic_spi_nor_resources),
-    .resource = amlogic_spi_nor_resources,
-    .dev = {
-        .platform_data = &amlogic_spi_platform,
-    },
 };
 #endif
 
@@ -454,100 +340,9 @@ static struct platform_device deinterlace_device = {
 };
 #endif
 
-#if defined(CONFIG_TVIN_VDIN)
-static struct resource vdin_resources[] = {
-    [0] = {
-        .start =  VDIN_ADDR_START,  //pbufAddr
-        .end   = VDIN_ADDR_END,     //pbufAddr + size
-        .flags = IORESOURCE_MEM,
-    },
-    [1] = {
-        .start = VDIN_ADDR_START,
-        .end   = VDIN_ADDR_END,
-        .flags = IORESOURCE_MEM,
-    },
-    [2] = {
-        .start = INT_VDIN_VSYNC,
-        .end   = INT_VDIN_VSYNC,
-        .flags = IORESOURCE_IRQ,
-    },
-    [3] = {
-        .start = INT_VDIN_VSYNC,
-        .end   = INT_VDIN_VSYNC,
-        .flags = IORESOURCE_IRQ,
-    },
-};
 
-static struct platform_device vdin_device = {
-    .name       = "vdin",
-    .id         = -1,
-    .num_resources = ARRAY_SIZE(vdin_resources),
-    .resource      = vdin_resources,
-};
-#endif
-
-#if defined(CONFIG_AM_NAND)||defined(CONFIG_INAND)
-static struct mtd_partition multi_partition_info_512M[] = 
-{
-   
-#if defined(CONFIG_INAND)
-	   {
-		   .name = "bootloader",
-		   .offset = BOOTLOADER_OFFSET,
-		   .size = BOOTLOADER_SIZE,
-	   },
-	   {
-		   .name = "boot_env",
-		   .offset = CONFIG_ENV_OFFSET,
-		   .size = CONFIG_ENV_SIZE,
-	   },
-#endif
-    {
-	.name = "aml_logo",
-	.offset = 8*1024*1024,
-	.size=8*1024*1024,
-    },
-    {
-        .name = "recovery",
-        .offset = 16*1024*1024,
-        .size = 16*1024*1024,
-    },
-    {
-        .name = "boot",
-        .offset = 32*1024*1024,
-        .size = 16*1024*1024,
-    },
-    {
-        .name = "system",
-        .offset = 48*1024*1024,
-        .size = 256*1024*1024,
-    },
-    {
-        .name = "cache",
-        .offset = 304*1024*1024,
-        .size = 128*1024*1024,
-    },
-#ifdef CONFIG_AML_NFTL
-   {
-        .name = "userdata",
-        .offset=432*1024*1024,
-        .size=512*1024*1024,
-    },
-    {
-	.name = "NFTL_Part",
-	.offset = MTDPART_OFS_APPEND,
-	.size = MTDPART_SIZ_FULL,
-    },
-#else
-    {
-        .name = "userdata",
-        .offset=MTDPART_OFS_APPEND,
-        .size=MTDPART_SIZ_FULL,
-    },
-#endif
-};
-
-static struct mtd_partition multi_partition_info_1G_or_More[] = 
+#if defined(CONFIG_AM_NAND)
+static struct mtd_partition multi_partition_info[] = 
 {
 #ifdef CONFIG_AML_NAND_ENV
     {
@@ -581,43 +376,19 @@ static struct mtd_partition multi_partition_info_1G_or_More[] =
         .offset = 576*1024*1024,
         .size = 192*1024*1024,
     },
-#ifdef CONFIG_AML_NFTL
-   {
-        .name = "userdata",
-        .offset = 768*1024*1024,
-        .size = 512*1024*1024,
-    },
-    {
-	.name = "NFTL_Part",
-	.offset = MTDPART_OFS_APPEND,
-	.size = MTDPART_SIZ_FULL,
-    },
-#else
     {
         .name = "userdata",
         .offset = MTDPART_OFS_APPEND,
         .size = MTDPART_SIZ_FULL,
     },
-#endif
 };
 
 static void nand_set_parts(uint64_t size, struct platform_nand_chip *chip)
 {
     printk("set nand parts for chip %lldMB\n", (size/(1024*1024)));
 
-    if (size/(1024*1024) == 512) {
-        chip->partitions = multi_partition_info_512M;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_512M);
-        }
-    else if (size/(1024*1024) >= 1024) {
-        chip->partitions = multi_partition_info_1G_or_More;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_1G_or_More);
-        }
-    else {
-        chip->partitions = multi_partition_info_512M;
-        chip->nr_partitions = ARRAY_SIZE(multi_partition_info_512M);
-        }
-    return;
+    chip->partitions = multi_partition_info;
+    chip->nr_partitions = ARRAY_SIZE(multi_partition_info);
 }
 
 static struct aml_nand_platform aml_nand_mid_platform[] = {
@@ -643,8 +414,8 @@ static struct aml_nand_platform aml_nand_mid_platform[] = {
 		.platform_nand_data = {
 			.chip =  {
 				.nr_chips = 4,
-				.nr_partitions = ARRAY_SIZE(multi_partition_info_512M),
-				.partitions = multi_partition_info_512M,
+				.nr_partitions = ARRAY_SIZE(multi_partition_info),
+				.partitions = multi_partition_info,
 				.set_parts = nand_set_parts,
 				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE | NAND_TWO_PLANE_MODE),
 			},
@@ -677,7 +448,8 @@ static struct platform_device aml_nand_device = {
     },
 };
 #endif
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
+
+#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE)
 /******************************
 *WL_REG_ON	-->GPIOC_8
 *WIFI_32K		-->GPIOC_15(CLK_OUT1)
@@ -754,7 +526,7 @@ static struct resource amlogic_card_resource[] = {
     }
 };
 
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
+#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE)
 #define GPIO_WIFI_HOSTWAKE  ((GPIOX_bank_bit0_31(11)<<16) |GPIOX_bit_bit0_31(11))
 void sdio_extern_init(void)
 {
@@ -771,15 +543,6 @@ void sdio_extern_init(void)
 }
 #endif
 
-static void inand_extern_init(void)
-{
-	printk("inand_extern_init !\n");
-   CLEAR_CBUS_REG_MASK(PAD_PULL_UP_REG3, (0xf<<0));//data pull up
-   CLEAR_CBUS_REG_MASK(PAD_PULL_UP_REG3, (0x3<<10)); //clk cmd pull
-   CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_2, (0x1f<<22)); //clr nand ce&data
-   SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_6, (0x1f<<25)); //set sdio c cmd&data
-   SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_6, (0x1<<24)); //set sdio c clk
-}		
 static struct aml_card_info  amlogic_card_info[] = {
     [0] = {
         .name = "sd_card",
@@ -800,30 +563,7 @@ static struct aml_card_info  amlogic_card_info[] = {
         .card_wp_input_mask = PREG_IO_30_MASK,
         .card_extern_init = 0,
     },
-#if defined(CONFIG_INAND)
-[1] = {
-   .name = "inand_card",
-   .work_mode = CARD_HW_MODE,
-   .io_pad_type = SDHC_BOOT_0_11,
-   .card_ins_en_reg = 0,
-   .card_ins_en_mask = 0,
-   .card_ins_input_reg = 0,
-   .card_ins_input_mask = 0,
-   .card_power_en_reg = 0,
-   .card_power_en_mask = 0,
-   .card_power_output_reg = 0,
-   .card_power_output_mask = 0,
-   .card_power_en_lev = 0,
-   .card_wp_en_reg = 0,
-   .card_wp_en_mask = 0,
-   .card_wp_input_reg = 0,
-   .card_wp_input_mask = 0,
-   .card_extern_init = inand_extern_init,
-   .partitions = multi_partition_info_512M,
-   .nr_partitions = ARRAY_SIZE(multi_partition_info_512M),
-     },
-#endif
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
+#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE)
     [2] = {
         .name = "sdio_card",
         .work_mode = CARD_HW_MODE,
@@ -2012,10 +1752,6 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_JPEGLOGO)
     &jpeglogo_device,
 #endif
-#if defined (CONFIG_AMLOGIC_PM)
-    &power_dev,
-#endif  
-
 #if defined(CONFIG_FB_AM)
     &fb_device,
 #endif
@@ -2025,17 +1761,11 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_AM_VIDEO)
     &deinterlace_device,
 #endif
-#if defined(CONFIG_TVIN_VDIN)
-    &vdin_device,
-#endif
 #if defined(CONFIG_AML_AUDIO_DSP)
     &audiodsp_device,
 #endif
 #if defined(CONFIG_SND_AML_M3)
     &aml_audio,
-#endif
-#ifdef CONFIG_SND_AML_M3_CS4334
-    &aml_sound_card,
 #endif
 #if defined(CONFIG_CARDREADER)
     &amlogic_card_device,
@@ -2043,25 +1773,19 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_KEYPADS_AM)||defined(CONFIG_VIRTUAL_REMOTE)||defined(CONFIG_KEYPADS_AM_MODULE)
     &input_device,
 #endif
-#if defined(CONFIG_AMLOGIC_SPI_NOR)
-    &amlogic_spi_nor_device,
-#endif
 #ifdef CONFIG_SARADC_AM
-&saradc_device,
+    &saradc_device,
 #endif
 #if defined(CONFIG_ADC_KEYPADS_AM)||defined(CONFIG_ADC_KEYPADS_AM_MODULE)
     &adc_kp_device,
 #endif
-#if defined(CONFIG_KEY_INPUT_CUSTOM_AM) || defined(CONFIG_KEY_INPUT_CUSTOM_AM_MODULE)
-    &input_device_key,  //changed by Elvis
-#endif
+//#if defined(CONFIG_KEY_INPUT_CUSTOM_AM) || defined(CONFIG_KEY_INPUT_CUSTOM_AM_MODULE)
+    // &input_device_key,  //changed by Elvis
+//#endif
 #if defined(CONFIG_AM_IR_RECEIVER)
     &irreceiver_device,
 #endif
 #ifdef CONFIG_AM_NAND
-    &aml_nand_device,
-#endif
-#if defined(CONFIG_NAND_FLASH_DRIVER_MULTIPLANE_CE)
     &aml_nand_device,
 #endif
 #ifdef CONFIG_BT_DEVICE
@@ -2079,28 +1803,11 @@ static struct platform_device __initdata *platform_devs[] = {
 #if defined(CONFIG_ANDROID_PMEM)
     &android_pmem_device,
 #endif
-#if defined(CONFIG_I2C_SW_AML)
-    &aml_sw_i2c_device,
-#endif
-#if defined(CONFIG_I2C_AML)|| defined(CONFIG_I2C_HW_AML)
-    &aml_i2c_device,
-    &aml_i2c_device1,
-    &aml_i2c_device2,
-#endif
 #if defined(CONFIG_AM_UART_WITH_S_CORE)
     &aml_uart_device,
 #endif
 #if defined(CONFIG_AM_TV_OUTPUT)||defined(CONFIG_AM_TCON_OUTPUT)
     &vout_device,   
-#endif
-#if defined(CONFIG_AM_TV_OUTPUT2)
-    &vout2_device,   
-#endif
-#ifdef CONFIG_USB_ANDROID
-    &android_usb_device,
-    #ifdef CONFIG_USB_ANDROID_MASS_STORAGE
-        &usb_mass_storage_device,
-    #endif
 #endif
 #ifdef CONFIG_POST_PROCESS_MANAGER
     &ppmgr_device,
@@ -2111,39 +1818,11 @@ static struct platform_device __initdata *platform_devs[] = {
 #ifdef CONFIG_EFUSE
 	&aml_efuse_device,
 #endif
-#ifdef CONFIG_AM_DVB
-	&amlogic_dvb_device,
-	&mxl101_device,
-	&gx1001_device,
-	&avl6211_device,
-	&ite9173_device,
-	&ite9133_device,
-#endif
- #if defined(CONFIG_AML_WATCHDOG)
+#if defined(CONFIG_AML_WATCHDOG)
         &aml_wdt_device,
- #endif
+#endif
 };
 
-static struct i2c_board_info __initdata aml_i2c_bus_info[] = {
-};
-
-static struct i2c_board_info __initdata aml_i2c_bus_info_1[] = {
-};
-
-static struct i2c_board_info __initdata aml_i2c_bus_info_2[] = {
-};
-
-static int __init aml_i2c_init(void)
-{
-    i2c_register_board_info(0, aml_i2c_bus_info,
-        ARRAY_SIZE(aml_i2c_bus_info));
-    i2c_register_board_info(1, aml_i2c_bus_info_1,
-        ARRAY_SIZE(aml_i2c_bus_info_1)); 
-    i2c_register_board_info(2, aml_i2c_bus_info_2,
-        ARRAY_SIZE(aml_i2c_bus_info_2)); 
-    return 0;
-}
-#define NET_EXT_CLK 1
 static void __init eth_pinmux_init(void)
 {
 	
@@ -2189,78 +1868,9 @@ static void __init device_pinmux_init(void )
     //uart_set_pinmux(UART_PORT_B,PINMUX_UART_B);
     /*pinmux of eth*/
     eth_pinmux_init();
-    aml_i2c_init();
+    // aml_i2c_init();
     
-    printk("SPDIF output.\n");
-		CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_0,(1<<19));
-		CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_3,(1<<25));
-		CLEAR_CBUS_REG_MASK(PERIPHS_PIN_MUX_7,(1<<17));
-		SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_3, (1<<24));
-//    set_audio_pinmux(AUDIO_OUT_TEST_N);
-   // set_audio_pinmux(AUDIO_IN_JTAG);
-
-
-	
-#ifdef CONFIG_AM_MXL101
-	//for mxl101
-
-	//set_mio_mux(3, 0x3F);
-	//clear_mio_mux(6, 0x1F<<19);
-
-	set_mio_mux(3, 0x3F<<6);
-	clear_mio_mux(0, 0xF);
-	clear_mio_mux(5, 0x1<<23);
-
-	clear_mio_mux(0, 1<<6);
-	//pwr pin;
-	clear_mio_mux(0, 1<<13);
-	clear_mio_mux(1, 1<<8);
-	//rst pin;
-	clear_mio_mux(0, 1<<28);
-	clear_mio_mux(1, 1<<20);
-/*	set_mio_mux(3, 1<<0);
-	set_mio_mux(3, 1<<1);
-	set_mio_mux(3, 1<<2);
-	set_mio_mux(3, 1<<3);
-	set_mio_mux(3, 1<<4);
-	clear_mio_mux(0, 1<<6);*/
-#endif
-
-
-#ifdef CONFIG_AM_AVL6211
-
-//for avl6211
-	printk("CONFIG_AM_AVL6211 set pinmux\n");
-	set_mio_mux(3, 0x3F<<6);
-//	clear_mio_mux(0, 1<<4);
-	clear_mio_mux(0, 0x7);
-
-
-#endif
-
-
-#ifdef CONFIG_AM_ITE9173
-//for ite9173
-	printk("CONFIG_AM_ITE9173 set pinmux\n");
-	set_mio_mux(3, 0x3F<<6);
-//	clear_mio_mux(0, 1<<4);
-	clear_mio_mux(0, 0x7);
-#endif
-
-#ifdef CONFIG_AM_ITE9133
-
-//for ite9133
-	printk("CONFIG_AM_ITE9133 set pinmux\n");
-	set_mio_mux(3, 0xFFF<<6);
-//	clear_mio_mux(0, 1<<4);
-	clear_mio_mux(0, 0x3F);
-
-
-#endif
-
-
-
-#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE_MODULE)
+#if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE)
     aml_wifi_bcm4018x_init();
 #endif
 
@@ -2379,17 +1989,12 @@ static __init void m1_init_machine(void)
 //    LED_PWM_REG0_init();
 
 	
-#ifdef CONFIG_VIDEO_AMLOGIC_CAPTURE
-    camera_power_on_init();
-#endif
-    platform_add_devices(platform_devs, ARRAY_SIZE(platform_devs));
-
 #ifdef CONFIG_USB_DWC_OTG_HCD
     printk("***m1_init_machine: usb set mode.\n");
     set_usb_phy_clk(USB_PHY_CLOCK_SEL_XTAL_DIV2);
-//	set_usb_phy_id_mode(USB_PHY_PORT_A, USB_PHY_MODE_SW_HOST);
+    set_usb_phy_id_mode(USB_PHY_PORT_A, USB_PHY_MODE_SW_HOST);
     lm_device_register(&usb_ld_a);
-  	set_usb_phy_id_mode(USB_PHY_PORT_B,USB_PHY_MODE_SW_HOST);
+    set_usb_phy_id_mode(USB_PHY_PORT_B,USB_PHY_MODE_SW_HOST);
     lm_device_register(&usb_ld_b);
 #endif
     disable_unused_model();
