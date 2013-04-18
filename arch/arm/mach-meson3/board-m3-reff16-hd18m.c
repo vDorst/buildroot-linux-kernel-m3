@@ -89,6 +89,8 @@
 #define GPIO_INT_WIFI  GPIO_C(3)
 #define GPIO_CLK_WIFI  GPIO_C(15)
 
+#define NET_EXT_CLK
+
 #ifdef CONFIG_SUSPEND
 static int suspend_state=0;
 #endif
@@ -383,7 +385,7 @@ static struct mtd_partition multi_partition_info[] = { // 4G
 	.size   = 4*1024*1024,
 },
 {//16M for logo
-	.name   = "logo",
+	.name   = "aml_logo",
 	.offset = 16*1024*1024,
 	.size   = 16*1024*1024,
 },
