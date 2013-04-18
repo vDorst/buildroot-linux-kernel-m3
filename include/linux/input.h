@@ -378,6 +378,8 @@ struct input_absinfo {
 #define KEY_WIMAX		246
 #define KEY_RFKILL		247	/* Key that controls all radios */
 
+#define KEY_RECOVERY		248	/* Key that enables recovery mode/menu */
+
 /* Code 255 is reserved for special needs of AT keyboard driver */
 
 #define BTN_MISC		0x100
