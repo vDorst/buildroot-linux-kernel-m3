@@ -599,7 +599,7 @@ static struct aml_card_info  amlogic_card_info[] = {
         .card_extern_init = 0,
     },
 #if defined(CONFIG_SDIO_DHD_CDC_WIFI_40181_MODULE)
-    [2] = {
+    [1] = {
         .name = "sdio_card",
         .work_mode = CARD_HW_MODE,
         .io_pad_type = SDIO_A_GPIOX_0_3,
@@ -627,7 +627,7 @@ static struct aml_card_platform amlogic_card_platform = {
 };
 
 static struct platform_device amlogic_card_device = { 
-    .name = "AMLOGIC_CARD", 
+    .name = "AMLOGIC_CARD",
     .id    = -1,
     .num_resources = ARRAY_SIZE(amlogic_card_resource),
     .resource = amlogic_card_resource,
