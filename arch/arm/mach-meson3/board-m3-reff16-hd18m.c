@@ -389,13 +389,11 @@ static struct mtd_partition multi_partition_info[] = { // 4G
 	.offset = 16*1024*1024,
 	.size   = 16*1024*1024,
 },
-/* Hide recovery partition
 {//16M for recovery
 	.name   = "recovery",
 	.offset = 32*1024*1024,
 	.size   = 16*1024*1024,
 },
-//*/
 {//20M for kernel
 	.name   = "boot",
 	.offset = (48)*1024*1024,
